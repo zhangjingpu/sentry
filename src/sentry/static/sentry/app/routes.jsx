@@ -61,6 +61,7 @@ import ProjectDetails from './views/projectDetails';
 import ProjectDocsContext from './views/projectInstall/docsContext';
 import ProjectEvents from './views/projectEvents';
 import ProjectFilters from './views/projectFilters';
+import ProjectGeneralSettings from './views/projectGeneralSettings';
 import ProjectGettingStarted from './views/projectInstall/gettingStarted';
 import ProjectInstallOverview from './views/projectInstall/overview';
 import ProjectInstallPlatform from './views/projectInstall/platform';
@@ -145,6 +146,10 @@ const orgSettingsRoutes = [
 ];
 
 const projectSettingsRoutes = [
+  <IndexRoute
+    key="project-general-settings"
+    component={errorHandler(ProjectGeneralSettings)}
+  />,
   <Route
     key="alerts/"
     name="Alerts"
