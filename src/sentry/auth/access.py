@@ -184,7 +184,11 @@ def from_member(member, scopes=None):
     )
 
 
-class SDKAccess(object):
+class SDKAccess(BaseAccess):
+    requires_sso = False
+    sso_is_valid = True
+    is_active = True
+
     def __init__(self, project_id):
         self.project_id = project_id
 
@@ -193,6 +197,16 @@ class SDKAccess(object):
 
     def get_scopes(self):
         return ('project:sdk-config',)
+
+    def has_project_access(self, project):
+        if not self.is_active:
+            return False
+        return project.id == self.project_id
+
+    def has_project_membership(self, project):
+        if not self.is_active:
+            return False
+        return project.id == self.project_id
 
     def has_scope(self, scope):
         return scope in self.get_scopes()
