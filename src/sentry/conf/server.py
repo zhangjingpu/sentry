@@ -1006,6 +1006,7 @@ SENTRY_SCOPES = set([
     'project:write',
     'project:admin',
     'project:releases',
+    'project:sdk-config',
     'event:read',
     'event:write',
     'event:admin',

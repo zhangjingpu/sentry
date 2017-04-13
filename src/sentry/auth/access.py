@@ -192,7 +192,7 @@ class SDKAccess(object):
         return []
 
     def get_scopes(self):
-        return ()
+        return ('project:sdk-config',)
 
     def has_scope(self, scope):
         return scope in self.get_scopes()

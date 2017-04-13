@@ -40,6 +40,10 @@ class SDKAuthentication(QuietBasicAuthentication):
 
 
 class SDKPermission(ProjectPermission):
+    scope_map = {
+        'GET': ['project:sdk-config'],
+    }
+
     def has_object_permission(self, request, view, project):
         request.access = request.auth
         allowed_scopes = set(self.scope_map.get(request.method, []))
