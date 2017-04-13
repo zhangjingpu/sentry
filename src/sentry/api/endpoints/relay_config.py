@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from sentry.auth.access import SDKAccess
 from sentry.api.authentication import (
-    AuthenticationFailed, QuietBasicAuthentication, get_authorization_header
+    AuthenticationFailed, QuietBasicAuthentication
 )
 from sentry.api.bases.project import ProjectEndpoint, ProjectPermission
 from sentry.api.exceptions import ResourceDoesNotExist
@@ -14,11 +14,6 @@ from sentry.models import Project, ProjectStatus
 
 class SDKAuthentication(QuietBasicAuthentication):
     def authenticate(self, request):
-        auth = get_authorization_header(request).split(' ', 1)
-
-        if not auth or auth[0].lower() != b'x-sentry-auth':
-            return None
-
         from sentry.coreapi import ClientApiHelper
         helper = ClientApiHelper(
             agent=request.META.get('HTTP_USER_AGENT'),
@@ -27,7 +22,7 @@ class SDKAuthentication(QuietBasicAuthentication):
         try:
             client_auth = helper.auth_from_request(request)
         except Exception:
-            raise AuthenticationFailed('Invalid credentials')
+            return None
 
         try:
             project_id = helper.project_id_from_auth(client_auth)

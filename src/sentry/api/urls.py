@@ -140,7 +140,7 @@ urlpatterns = patterns(
         name='sentry-api-0-broadcast-index'),
 
     # Relay
-    url(r'^relay/config/(?P<P>project_id>[^\/]+)/$',
+    url(r'^relay/config/(?P<project_id>[^\/]+)/$',
         RelayConfigEndpoint.as_view()),
 
     # Users
