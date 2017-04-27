@@ -88,5 +88,5 @@ class RelayConfigEndpoint(SDKProjectEndpoint):
 
     def get(self, request, project):
         return Response({
-            'hi': 'there',
+            'filters': [{'field': 'message', 'regex': "^Internet Explorer.*$"}]
         })
