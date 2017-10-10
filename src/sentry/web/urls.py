@@ -43,7 +43,6 @@ from sentry.web.frontend.organization_member_settings import \
 from sentry.web.frontend.organization_integration_setup import \
     OrganizationIntegrationSetupView
 from sentry.web.frontend.out import OutView
-from sentry.web.frontend.organization_members import OrganizationMembersView
 from sentry.web.frontend.project_issue_tracking import ProjectIssueTrackingView
 from sentry.web.frontend.project_plugin_configure import \
     ProjectPluginConfigureView
@@ -357,11 +356,6 @@ urlpatterns += patterns(
     url(
         r'^organizations/(?P<organization_slug>[\w_-]+)/integrations/(?P<provider_id>[\w_-]+)/setup/$',
         OrganizationIntegrationSetupView.as_view()
-    ),
-    url(
-        r'^organizations/(?P<organization_slug>[\w_-]+)/members/$',
-        OrganizationMembersView.as_view(),
-        name='sentry-organization-members'
     ),
     url(
         r'^organizations/(?P<organization_slug>[\w_-]+)/members/new/$',

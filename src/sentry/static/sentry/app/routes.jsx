@@ -44,6 +44,8 @@ import OrganizationDashboard from './views/organizationDashboard';
 import OrganizationDetails from './views/organizationDetails';
 import OrganizationHomeContainer from './components/organizations/homeContainer';
 import OrganizationIntegrations from './views/organizationIntegrations';
+import OrganizationMembersView
+  from './views/settings/organization/members/organizationMembersView';
 import OrganizationRateLimits from './views/organizationRateLimits';
 import OrganizationRepositories from './views/organizationRepositories';
 import OrganizationSettings from './views/organizationSettings';
@@ -121,6 +123,11 @@ const orgSettingsRoutes = [
     key="rate-limits"
     path="rate-limits/"
     component={errorHandler(OrganizationRateLimits)}
+  />,
+  <Route
+    key="members"
+    path="members/"
+    component={errorHandler(OrganizationMembersView)}
   />,
   <Route key="members/new/" path="members/new/" component={errorHandler(InviteMember)} />,
   <Route key="repos" path="repos/" component={errorHandler(OrganizationRepositories)} />,
