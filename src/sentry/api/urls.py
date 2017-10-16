@@ -38,7 +38,7 @@ from .endpoints.organization_auditlogs import OrganizationAuditLogsEndpoint
 from .endpoints.organization_api_key_index import OrganizationApiKeyIndexEndpoint
 from .endpoints.organization_api_key_details import OrganizationApiKeyDetailsEndpoint
 from .endpoints.organization_auth_providers import OrganizationAuthProvidersEndpoint
-from .endpoints.organization_auth_provider import OrganizationAuthProviderEndpoint
+from .endpoints.organization_auth_provider_details import OrganizationAuthProviderDetailsEndpoint
 from .endpoints.organization_auth_provider_send_reminders import OrganizationAuthProviderSendRemindersEndpoint
 from .endpoints.organization_details import OrganizationDetailsEndpoint
 from .endpoints.organization_shortid import ShortIdLookupEndpoint
@@ -239,7 +239,7 @@ urlpatterns = patterns(
     ),
     url(
         r'^organizations/(?P<organization_slug>[^\/]+)/auth-provider/$',
-        OrganizationAuthProviderEndpoint.as_view(),
+        OrganizationAuthProviderDetailsEndpoint.as_view(),
         name='sentry-api-0-organization-auth-provider'
     ),
     url(
