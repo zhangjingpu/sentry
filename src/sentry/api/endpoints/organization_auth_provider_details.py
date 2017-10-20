@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import status
 from rest_framework.response import Response
@@ -8,8 +7,7 @@ from rest_framework.response import Response
 from sentry import features
 from sentry.api.bases.organization import OrganizationEndpoint, OrganizationAuthProviderPermission
 from sentry.api.serializers import serialize
-from sentry.models import AuthProvider, OrganizationMember
-from sentry.utils.http import absolute_uri
+from sentry.models import AuthProvider
 
 ERR_NO_SSO = _('The SSO feature is not enabled for this organization.')
 
@@ -19,8 +17,9 @@ class OrganizationAuthProviderDetailsEndpoint(OrganizationEndpoint):
 
     def get(self, request, organization):
         """
-        Retrieve an Organization's Auth Provider
-        ````````````````````````````````````````
+        Retrieve details about Organization's SSO settings and
+        currently installed auth_provider
+        ``````````````````````````````````````````````````````
 
         :pparam string organization_slug: the organization short name
         :auth: required
@@ -37,20 +36,4 @@ class OrganizationAuthProviderDetailsEndpoint(OrganizationEndpoint):
             # configured, make sure we respond with a 20x
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        provider = auth_provider.get_provider()
-
-        pending_links_count = OrganizationMember.objects.filter(
-            organization=organization,
-            flags=~getattr(OrganizationMember.flags, 'sso:linked'),
-        ).count()
-
-        context = {
-            'pending_links_count': pending_links_count,
-            'login_url': absolute_uri(reverse('sentry-organization-home', args=[organization.slug])),
-            'auth_provider': serialize(auth_provider),
-            'default_role': organization.default_role,
-            'require_link': not auth_provider.flags.allow_unlinked,
-            'provider_name': provider.name,
-        }
-
-        return Response(serialize(context, request.user))
+        return Response(serialize(auth_provider, request.user))
