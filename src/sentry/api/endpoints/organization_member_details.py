@@ -50,6 +50,7 @@ def get_allowed_roles(request, organization, member=None):
 
 class OrganizationMemberSerializer(serializers.Serializer):
     reinvite = serializers.BooleanField()
+    regenerate = serializers.BooleanField()
 
 
 class RelaxedMemberPermission(OrganizationPermission):
@@ -144,6 +145,12 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
         # access level
         if result.get('reinvite'):
             if om.is_pending:
+                if result.get('regenerate'):
+                    if request.access.has_scope('member:admin'):
+                        om.update(token=om.generate_token())
+                    else:
+                        return Response({'detail': ERR_INSUFFICIENT_SCOPE}, status=400)
+
                 om.send_invite_email()
             elif auth_provider and not getattr(om.flags, 'sso:linked'):
                 om.send_sso_link_email(request.user, auth_provider)

@@ -31,6 +31,63 @@ class UpdateOrganizationMemberTest(APITestCase):
         assert resp.status_code == 204
         mock_send_invite_email.assert_called_once_with()
 
+    @patch('sentry.models.OrganizationMember.send_invite_email')
+    def test_member_no_regenerate_invite_pending_member(self, mock_send_invite_email):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+        member_om = self.create_member(
+            organization=organization,
+            email='foo@example.com',
+            role='member',
+        )
+        old_invite = member_om.get_invite_link()
+
+        member = self.create_user('baz@example.com')
+        self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(member)
+
+        resp = self.client.put(path, data={'reinvite': 1, 'regenerate': 1})
+
+        assert resp.status_code == 403
+        member_om = OrganizationMember.objects.get(id=member_om.id)
+        assert old_invite == member_om.get_invite_link()
+        assert not mock_send_invite_email.mock_calls
+
+    @patch('sentry.models.OrganizationMember.send_invite_email')
+    def test_regenerate_invite_pending_member(self, mock_send_invite_email):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+        member_om = self.create_member(
+            organization=organization,
+            email='foo@example.com',
+            role='member',
+        )
+        old_invite = member_om.get_invite_link()
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.put(path, data={'reinvite': 1, 'regenerate': 1})
+
+        assert resp.status_code == 204
+        member_om = OrganizationMember.objects.get(id=member_om.id)
+        assert old_invite != member_om.get_invite_link()
+        mock_send_invite_email.assert_called_once_with()
+
     def test_reinvite_sso_link(self):
         self.login_as(user=self.user)
 
