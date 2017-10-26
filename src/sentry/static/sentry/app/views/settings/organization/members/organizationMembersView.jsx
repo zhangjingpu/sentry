@@ -31,7 +31,17 @@ class OrganizationMembersView extends OrganizationSettingsView {
   getEndpoints() {
     return [
       ['members', `/organizations/${this.props.params.orgId}/members/`],
-      ['authProvider', `/organizations/${this.props.params.orgId}/auth-provider/`],
+      [
+        'authProvider',
+        `/organizations/${this.props.params.orgId}/auth-provider/`,
+        {},
+        {
+          allowError: error => {
+            // Allow for 403s
+            return error.status === 403;
+          }
+        }
+      ],
       ['requestList', `/organizations/${this.props.params.orgId}/access-requests/`]
     ];
   }
@@ -208,7 +218,7 @@ class OrganizationMembersView extends OrganizationSettingsView {
                 ? t('You do not have enough permission to add new members')
                 : undefined
             }
-            to={`/organization/${orgId}/members/invite/`}>
+            to={`/organizations/${orgId}/members/new/`}>
             <span className="icon-plus" /> {t('Invite Member')}
           </Button>
         </SpreadLayout>

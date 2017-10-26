@@ -29,23 +29,24 @@ import GroupTagValues from './views/groupTagValues';
 import GroupTags from './views/groupTags';
 import GroupUserReports from './views/groupUserReports';
 import HookStore from './stores/hookStore';
+import InviteMember from './views/inviteMember/inviteMember';
 import MyIssuesAssignedToMe from './views/myIssues/assignedToMe';
 import MyIssuesBookmarked from './views/myIssues/bookmarked';
 import MyIssuesViewed from './views/myIssues/viewed';
 import NewProject from './views/projectInstall/newProject';
 import OnboardingConfigure from './views/onboarding/configure/index';
 import OnboardingWizard from './views/onboarding/index';
+import OrganizationApiKeyDetailsView from './views/settings/organization/apiKeys/organizationApiKeyDetailsView';
+import OrganizationApiKeysView from './views/settings/organization/apiKeys/organizationApiKeysView';
 import OrganizationAuditLog from './views/organizationAuditLog';
 import OrganizationContext from './views/organizationContext';
-import OrganizationApiKeysView from './views/settings/organization/apiKeys/organizationApiKeysView';
-import OrganizationApiKeyDetailsView from './views/settings/organization/apiKeys/organizationApiKeyDetailsView';
 import OrganizationCreate from './views/organizationCreate';
 import OrganizationDashboard from './views/organizationDashboard';
 import OrganizationDetails from './views/organizationDetails';
 import OrganizationHomeContainer from './components/organizations/homeContainer';
 import OrganizationIntegrations from './views/organizationIntegrations';
-import OrganizationMembersView
-  from './views/settings/organization/members/organizationMembersView';
+import OrganizationMemberDetail from './views/settings/organization/members/organizationMemberDetail';
+import OrganizationMembersView from './views/settings/organization/members/organizationMembersView';
 import OrganizationRateLimits from './views/organizationRateLimits';
 import OrganizationRepositories from './views/organizationRepositories';
 import OrganizationSettings from './views/organizationSettings';
@@ -84,7 +85,6 @@ import RouteNotFound from './views/routeNotFound';
 import SetCallsignsAction from './views/requiredAdminActions/setCallsigns';
 import SharedGroupDetails from './views/sharedGroupDetails';
 import Stream from './views/stream';
-import InviteMember from './views/inviteMember/inviteMember';
 import TeamCreate from './views/teamCreate';
 import TeamDetails from './views/teamDetails';
 import TeamMembers from './views/teamMembers';
@@ -130,6 +130,11 @@ const orgSettingsRoutes = [
     component={errorHandler(OrganizationMembersView)}
   />,
   <Route key="members/new/" path="members/new/" component={errorHandler(InviteMember)} />,
+  <Route
+    key="members-detail"
+    path="members/:memberId/"
+    component={errorHandler(OrganizationMemberDetail)}
+  />,
   <Route key="repos" path="repos/" component={errorHandler(OrganizationRepositories)} />,
   <Route
     key="settings"
