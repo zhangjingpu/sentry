@@ -59,6 +59,89 @@ class UpdateOrganizationMemberTest(APITestCase):
         assert resp.status_code == 204
         assert len(mail.outbox) == 1
 
+    # Normal users can not see invite link
+    def test_get_member_invite_link_for_admin(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+
+        # User that will be pending
+        pending_member_om = self.create_member(
+            user=None,
+            email='bar@example.com',
+            organization=organization,
+            role='member',
+            teams=[],
+        )
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, pending_member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.get(path)
+
+        assert resp.status_code == 200
+        assert resp.data['invite_link'] != ''
+
+    # Normal users can not see invite link
+    def test_get_member_no_invite_link(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+
+        # User that will be pending
+        pending_member_om = self.create_member(
+            user=None,
+            email='bar@example.com',
+            organization=organization,
+            role='member',
+            teams=[],
+        )
+
+        member = self.create_user('baz@example.com')
+        self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, pending_member_om.id]
+        )
+
+        self.login_as(member)
+
+        resp = self.client.get(path)
+
+        assert resp.status_code == 200
+        assert 'invite_link' not in resp.data
+
+    def test_get_member_list_teams(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+        team = self.create_team(organization=organization, name='Team')
+
+        member = self.create_user('baz@example.com')
+        member_om = self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+            teams=[team]
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.get(path)
+
+        assert resp.status_code == 200
+        assert team.slug in resp.data['teams']
+
     @patch('sentry.models.OrganizationMember.send_sso_link_email')
     def test_cannot_reinvite_normal_member(self, mock_send_sso_link_email):
         self.login_as(user=self.user)
@@ -179,7 +262,8 @@ class DeleteOrganizationMemberTest(APITestCase):
             user=other_user,
         )
 
-        path = reverse('sentry-api-0-organization-member-details', args=[organization.slug, 'me'])
+        path = reverse('sentry-api-0-organization-member-details',
+                       args=[organization.slug, 'me'])
 
         self.login_as(other_user)
 

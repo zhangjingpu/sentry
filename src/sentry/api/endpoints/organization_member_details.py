@@ -9,7 +9,7 @@ from sentry import roles
 from sentry.api.bases.organization import (
     OrganizationEndpoint, OrganizationPermission)
 from sentry.api.exceptions import ResourceDoesNotExist
-from sentry.api.serializers import serialize, RoleSerializer
+from sentry.api.serializers import serialize, RoleSerializer, OrganizationMemberWithTeamsSerializer
 
 from sentry.models import (
     AuditLogEntryEvent, AuthIdentity, AuthProvider, OrganizationMember)
@@ -112,7 +112,11 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
 
         context = serialize(
             member,
+            serializer=OrganizationMemberWithTeamsSerializer()
         )
+
+        if request.access.has_scope('member:admin'):
+            context['invite_link'] = member.get_invite_link()
 
         context['allowed_roles'] = allowed_roles
 
