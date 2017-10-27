@@ -111,6 +111,8 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
             context['invite_link'] = member.get_invite_link()
 
         if allowed_roles:
+            allowed_roles = [{'role': serialize(r, serializer=RoleSerializer()),
+                              'allowed': r in allowed_roles} for r in roles.get_all()]
             context['allowed_roles'] = allowed_roles
 
         return context
@@ -125,9 +127,6 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
 
         _, allowed_roles = get_allowed_roles(request, organization, member)
 
-        allowed_roles = [{'role': serialize(r, serializer=RoleSerializer()),
-                          'allowed': r in allowed_roles} for r in roles.get_all()]
-
         context = self._serialize_member(member, request, allowed_roles)
 
         return Response(context)
@@ -140,6 +139,7 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
 
         serializer = OrganizationMemberSerializer(
             data=request.DATA, partial=True)
+
         if not serializer.is_valid():
             return Response(status=400)
 
@@ -200,7 +200,6 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
                 if not result.get('role') in {r.id for r in allowed_roles}:
                     return Response(
                         {'role': 'You do not have permission to invite that role.'}, status=403)
-
                 om.update(role=result.get('role'))
 
             om.save()

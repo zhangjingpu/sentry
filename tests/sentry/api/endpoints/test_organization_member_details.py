@@ -4,7 +4,8 @@ from django.core import mail
 from django.core.urlresolvers import reverse
 from mock import patch
 
-from sentry.models import (AuthProvider, OrganizationMember)
+from sentry.models import (
+    AuthProvider, OrganizationMember, OrganizationMemberTeam)
 from sentry.testutils import APITestCase
 
 
@@ -199,6 +200,121 @@ class UpdateOrganizationMemberTest(APITestCase):
 
         assert resp.status_code == 200
         assert team.slug in resp.data['teams']
+
+    def test_can_update_teams(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+        foo = self.create_team(organization=organization, name='Team Foo')
+        bar = self.create_team(organization=organization, name='Team Bar')
+
+        member = self.create_user('baz@example.com')
+        member_om = self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+            teams=[]
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.put(path, data={
+            'teams': [foo.slug, bar.slug]
+        })
+        assert resp.status_code == 200
+
+        member_teams = OrganizationMemberTeam.objects.filter(
+            organizationmember=member_om)
+        team_ids = map(lambda x: x.team_id, member_teams)
+        assert foo.id in team_ids
+        assert bar.id in team_ids
+
+        member_om = OrganizationMember.objects.get(id=member_om.id)
+
+        teams = map(lambda team: team.slug, member_om.teams.all())
+        assert foo.slug in teams
+        assert bar.slug in teams
+
+    def test_can_not_update_with_invalid_team(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+
+        member = self.create_user('baz@example.com')
+        member_om = self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+            teams=[]
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.put(path, data={
+            'teams': ['invalid-team']
+        })
+        assert resp.status_code == 400
+
+        member_om = OrganizationMember.objects.get(id=member_om.id)
+        teams = map(lambda team: team.slug, member_om.teams.all())
+        assert len(teams) == 0
+
+    def test_can_update_role(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+        member = self.create_user('baz@example.com')
+        member_om = self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+            teams=[]
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.put(path, data={'role': 'admin'})
+        assert resp.status_code == 200
+
+        member_om = OrganizationMember.objects.get(
+            organization=organization, user=member)
+        assert member_om.role == 'admin'
+
+    def test_can_not_update_with_invalid_role(self):
+        self.login_as(user=self.user)
+
+        organization = self.create_organization(name='foo', owner=self.user)
+        member = self.create_user('baz@example.com')
+        member_om = self.create_member(
+            organization=organization,
+            user=member,
+            role='member',
+            teams=[]
+        )
+
+        path = reverse(
+            'sentry-api-0-organization-member-details', args=[organization.slug, member_om.id]
+        )
+
+        self.login_as(self.user)
+
+        resp = self.client.put(path, data={'role': 'invalid-role'})
+        assert resp.status_code == 400
+        member_om = OrganizationMember.objects.get(
+            organization=organization, user=member)
+        assert member_om.role == 'member'
 
     @patch('sentry.models.OrganizationMember.send_sso_link_email')
     def test_cannot_reinvite_normal_member(self, mock_send_sso_link_email):
