@@ -56,7 +56,7 @@ class OrganizationMemberWithTeamsSerializer(OrganizationMemberSerializer):
             results[m['organizationmember']].append(teams[m['team']].slug)
 
         for item in item_list:
-            teams = results[item.id] if item.id in results else []
+            teams = results.get(item.id, [])
             try:
                 attrs[item]['teams'] = teams
             except KeyError:
@@ -70,6 +70,6 @@ class OrganizationMemberWithTeamsSerializer(OrganizationMemberSerializer):
         d = super(OrganizationMemberWithTeamsSerializer,
                   self).serialize(obj, attrs, user)
 
-        d['teams'] = attrs['teams'] if 'teams' in attrs else []
+        d['teams'] = attrs.get('teams', [])
 
         return d
