@@ -43,10 +43,11 @@ class OrganizationMemberWithTeamsSerializer(OrganizationMemberSerializer):
         attrs = super(OrganizationMemberWithTeamsSerializer,
                       self).get_attrs(item_list, user)
 
-        member_team_map = OrganizationMemberTeam.objects.values(
-            'organizationmember', 'team')
+        member_team_map = list(OrganizationMemberTeam.objects.filter(
+            organizationmember__in=item_list).values(
+            'organizationmember', 'team'))
 
-        teams = {t.id: t for t in Team.objects.filter(
+        teams = {team.id: team for team in Team.objects.filter(
             id__in=[item['team'] for item in member_team_map])}
         results = defaultdict(list)
 
@@ -69,9 +70,6 @@ class OrganizationMemberWithTeamsSerializer(OrganizationMemberSerializer):
         d = super(OrganizationMemberWithTeamsSerializer,
                   self).serialize(obj, attrs, user)
 
-        try:
-            d['teams'] = attrs['teams']
-        except KeyError:
-            pass
+        d['teams'] = attrs['teams'] if 'teams' in attrs else []
 
         return d

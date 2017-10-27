@@ -178,7 +178,7 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
                 teams = list(Team.objects.filter(
                     organization=organization,
                     status=TeamStatus.VISIBLE,
-                    slug__in=result.get('teams'),
+                    slug__in=result['teams'],
                 ))
 
                 if len(set(result['teams'])) != len(teams):
@@ -197,12 +197,10 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
 
             if result.get('role'):
                 _, allowed_roles = get_allowed_roles(request, organization)
-                if not result.get('role') in {r.id for r in allowed_roles}:
+                if not result['role'] in {r.id for r in allowed_roles}:
                     return Response(
                         {'role': 'You do not have permission to invite that role.'}, status=403)
-                om.update(role=result.get('role'))
-
-            om.save()
+                om.update(role=result['role'])
 
         context = self._serialize_member(om, request, allowed_roles)
 
