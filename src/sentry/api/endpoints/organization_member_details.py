@@ -171,19 +171,19 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
         if auth_provider:
             sso_enabled.send(organization=organization, sender=request.user)
 
-        with transaction.atomic():
-            if result.get('teams'):
-                # dupe code from member_index
-                # ensure listed teams are real teams
-                teams = list(Team.objects.filter(
-                    organization=organization,
-                    status=TeamStatus.VISIBLE,
-                    slug__in=result['teams'],
-                ))
+        if result.get('teams'):
+            # dupe code from member_index
+            # ensure listed teams are real teams
+            teams = list(Team.objects.filter(
+                organization=organization,
+                status=TeamStatus.VISIBLE,
+                slug__in=result['teams'],
+            ))
 
-                if len(set(result['teams'])) != len(teams):
-                    return Response({'teams': 'Invalid team'}, status=400)
+            if len(set(result['teams'])) != len(teams):
+                return Response({'teams': 'Invalid team'}, status=400)
 
+            with transaction.atomic():
                 # teams may be empty
                 OrganizationMemberTeam.objects.filter(
                     organizationmember=om).delete()
@@ -195,12 +195,12 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
                     ]
                 )
 
-            if result.get('role'):
-                _, allowed_roles = get_allowed_roles(request, organization)
-                if not result['role'] in {r.id for r in allowed_roles}:
-                    return Response(
-                        {'role': 'You do not have permission to invite that role.'}, status=403)
-                om.update(role=result['role'])
+        if result.get('role'):
+            _, allowed_roles = get_allowed_roles(request, organization)
+            if not result['role'] in {r.id for r in allowed_roles}:
+                return Response(
+                    {'role': 'You do not have permission to invite that role.'}, status=403)
+            om.update(role=result['role'])
 
         context = self._serialize_member(om, request, allowed_roles)
 
