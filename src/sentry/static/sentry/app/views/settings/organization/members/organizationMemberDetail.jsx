@@ -14,7 +14,7 @@ import TeamSelect from '../../../inviteMember/teamSelect';
 
 class OrganizationMemberDetail extends AsyncView {
   static contextTypes = {
-    organization: SentryTypes.Organization
+    organization: SentryTypes.Organization,
   };
 
   constructor(...args) {
@@ -26,7 +26,7 @@ class OrganizationMemberDetail extends AsyncView {
       selectedTeams: new Set(teams.map(({slug}) => slug)),
       roleList: [],
       selectedRole: '',
-      member: null
+      member: null,
     };
   }
 
@@ -55,9 +55,12 @@ class OrganizationMemberDetail extends AsyncView {
     updateMember(this.api, {
       orgId: slug,
       memberId: params.memberId,
-      data: this.state.member
+      data: this.state.member,
     })
-      .then(() => IndicatorStore.add('Saved', 'success', {duration: 5000}))
+      .then(() => {
+        IndicatorStore.add('Saved', 'success', {duration: 5000});
+        browserHistory.push(`/organizations/${slug}/members/`);
+      })
       .catch(() => IndicatorStore.add('Could not save...', 'error', {duration: 5000}))
       .then(() => {
         IndicatorStore.remove(indicator);
@@ -75,7 +78,7 @@ class OrganizationMemberDetail extends AsyncView {
     resendMemberInvite(this.api, {
       orgId: slug,
       memberId: params.memberId,
-      regenerate
+      regenerate,
     })
       .then(data => {
         IndicatorStore.add('Sent invite!', 'success', {duration: 5000});
@@ -102,8 +105,8 @@ class OrganizationMemberDetail extends AsyncView {
     this.setState({
       member: {
         ...member,
-        teams: Array.from(selectedTeams.values())
-      }
+        teams: Array.from(selectedTeams.values()),
+      },
     });
   };
 
@@ -121,7 +124,8 @@ class OrganizationMemberDetail extends AsyncView {
         <div className="page-header">
           <h3>
             {member.name}
-            <br /><small>Member Settings</small>
+            <br />
+            <small>Member Settings</small>
           </h3>
         </div>
 
@@ -160,7 +164,7 @@ class OrganizationMemberDetail extends AsyncView {
               </div>
             </div>
 
-            {inviteLink &&
+            {inviteLink && (
               <div className="form-actions">
                 <div className="control-group">
                   <label>{t('Invite Link')}</label>
@@ -176,14 +180,16 @@ class OrganizationMemberDetail extends AsyncView {
                 <div className="align-right">
                   <Button
                     style={{marginRight: 10}}
-                    onClick={() => this.handleInvite(true)}>
+                    onClick={() => this.handleInvite(true)}
+                  >
                     {t('Generate New Invite')}
                   </Button>
                   <Button onClick={() => this.handleInvite(false)}>
                     {t('Resend Invite')}
                   </Button>
                 </div>
-              </div>}
+              </div>
+            )}
           </div>
         </div>
 
@@ -203,7 +209,8 @@ class OrganizationMemberDetail extends AsyncView {
           priority="primary"
           busy={this.state.busy}
           className="invite-member-submit"
-          onClick={this.handleSave}>
+          onClick={this.handleSave}
+        >
           {t('Save Member')}
         </Button>
       </div>
