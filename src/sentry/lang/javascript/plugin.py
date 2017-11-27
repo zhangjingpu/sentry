@@ -12,7 +12,8 @@ from .errormapping import rewrite_exception
 def preprocess_event(data):
     rewrite_exception(data)
     fix_culprit(data)
-    inject_device_data(data)
+    if data.get('platform') == 'javascript':
+        inject_device_data(data)
     generate_modules(data)
     return data
 
