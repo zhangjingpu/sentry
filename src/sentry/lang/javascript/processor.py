@@ -524,8 +524,8 @@ class JavaScriptStacktraceProcessor(StacktraceProcessor):
         # therefore we only process user-land frames (starting with /)
         # or those created by bundle/webpack internals
         if self.data.get('platform') == 'node' and \
-            not frame.get('abs_path').startswith(('/', 'app:', 'webpack:')):
-                return
+                not frame.get('abs_path').startswith(('/', 'app:', 'webpack:')):
+            return
 
         errors = cache.get_errors(frame['abs_path'])
         if errors:
@@ -655,9 +655,9 @@ class JavaScriptStacktraceProcessor(StacktraceProcessor):
                     # * [node] and webpack, which includes it's own code to bootstrap all modules and its internals
                     #   eg. webpack:///webpack/bootstrap, webpack:///external
                     if filename.startswith('~/') or \
-                        filename.startswith('./node_modules/') or \
-                        not filename.startswith('./'):
-                            in_app = False
+                            filename.startswith('./node_modules/') or \
+                            not filename.startswith('./'):
+                        in_app = False
                     # And conversely, local dependencies start with './'
                     elif filename.startswith('./'):
                         in_app = True
@@ -808,8 +808,8 @@ class JavaScriptStacktraceProcessor(StacktraceProcessor):
                 continue
             # we cannot fetch any other files than those uploaded by user
             if self.data.get('platform') == 'node' and \
-                not f.get('abs_path').startswith('app:'):
-                  continue
+                    not f.get('abs_path').startswith('app:'):
+                continue
             pending_file_list.add(f['abs_path'])
 
         for idx, filename in enumerate(pending_file_list):
