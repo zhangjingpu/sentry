@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from datetime import timedelta
+import functools
 import logging
 from uuid import uuid4
 
@@ -11,7 +12,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 
 from sentry import features, search
-from sentry.api.base import DocSection
+from sentry.api.base import DocSection, EnvironmentMixin
 from sentry.api.bases.project import ProjectEndpoint, ProjectEventPermission
 from sentry.api.fields import UserField
 from sentry.api.serializers import serialize
@@ -176,7 +177,7 @@ class GroupValidator(serializers.Serializer):
         return attrs
 
 
-class ProjectGroupIndexEndpoint(ProjectEndpoint):
+class ProjectGroupIndexEndpoint(ProjectEndpoint, EnvironmentMixin):
     doc_section = DocSection.EVENTS
 
     permission_classes = (ProjectEventPermission, )
@@ -306,7 +307,12 @@ class ProjectGroupIndexEndpoint(ProjectEndpoint):
                         StreamGroupSerializer(
                             stats_period=stats_period,
                             matching_event_id=getattr(
-                                matching_event, 'id', None)
+                                matching_event, 'id', None),
+                            get_environment_id=functools.partial(
+                                self._get_environment_id_from_request,
+                                request,
+                                project.organization_id,
+                            ),
                         )
                     )
                 )
