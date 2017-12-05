@@ -438,7 +438,7 @@ class TagStorage(TagStorage):
 
         return defaultdict(int, qs.values_list('group_id', 'values_seen'))
 
-    def get_group_tag_value_count(self, group_id, environment_id, key):
+    def get_group_tag_value_count(self, project_id, group_id, environment_id, key):
         # TODO: fetch from redis
         pass
 
@@ -469,7 +469,7 @@ class TagStorage(TagStorage):
         #     last_seen__gte=cutoff,
         # ).aggregate(t=Sum('times_seen'))['t']
 
-    def get_top_group_tag_values(self, group_id, environment_id, key, limit=3):
+    def get_top_group_tag_values(self, project_id, group_id, environment_id, key, limit=3):
         # TODO: fetch from redis
         pass
 
@@ -542,7 +542,10 @@ class TagStorage(TagStorage):
         ).order_by('-last_seen').values_list('group_id', flat=True)[:limit])
 
     def get_group_tag_values_for_users(self, event_users, limit=100):
-        tag_filters = [Q(value__value=eu.tag_value, project_id=eu.project_id) for eu in event_users]
+        tag_filters = [
+            Q(value__value=eu.tag_value, project_id=eu.project_id)
+            for eu in event_users
+        ]
 
         return list(GroupTagValue.objects.filter(
             reduce(or_, tag_filters),

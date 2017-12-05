@@ -370,12 +370,12 @@ class Group(Model):
 
     def get_first_release(self):
         if self.first_release_id is None:
-            return tagstore.get_first_release(self.id)
+            return tagstore.get_first_release(self.project_id, self.id)
 
         return self.first_release.version
 
     def get_last_release(self):
-        return tagstore.get_last_release(self.id)
+        return tagstore.get_last_release(self.project_id, self.id)
 
     def get_event_type(self):
         """

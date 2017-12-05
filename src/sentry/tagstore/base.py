@@ -371,27 +371,27 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_group_tag_value_count(self, group_id, environment_id, key):
+    def get_group_tag_value_count(self, project_id, group_id, environment_id, key):
         """
-        >>> get_group_tag_value_count(1, 2, 'key1')
-        """
-        raise NotImplementedError
-
-    def get_top_group_tag_values(self, group_id, environment_id, key, limit=3):
-        """
-        >>> get_top_group_tag_values(1, 2, 'key1')
+        >>> get_group_tag_value_count(1, 2, 3, 'key1')
         """
         raise NotImplementedError
 
-    def get_first_release(self, group_id):
+    def get_top_group_tag_values(self, project_id, group_id, environment_id, key, limit=3):
         """
-        >>> get_first_release(1)
+        >>> get_top_group_tag_values(1, 2, 3, 'key1')
         """
         raise NotImplementedError
 
-    def get_last_release(self, group_id):
+    def get_first_release(self, project_id, group_id):
         """
-        >>> get_last_release(1)
+        >>> get_first_release(1, 2)
+        """
+        raise NotImplementedError
+
+    def get_last_release(self, project_id, group_id):
+        """
+        >>> get_last_release(1, 2)
         """
         raise NotImplementedError
 

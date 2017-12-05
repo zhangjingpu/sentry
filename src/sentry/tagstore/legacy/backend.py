@@ -394,7 +394,7 @@ class LegacyTagStorage(TagStorage):
             key='sentry:user',
         ).values_list('group_id', 'values_seen'))
 
-    def get_group_tag_value_count(self, group_id, environment_id, key):
+    def get_group_tag_value_count(self, project_id, group_id, environment_id, key):
         if db.is_postgres():
             # This doesnt guarantee percentage is accurate, but it does ensure
             # that the query has a maximum cost
@@ -422,7 +422,7 @@ class LegacyTagStorage(TagStorage):
             last_seen__gte=cutoff,
         ).aggregate(t=Sum('times_seen'))['t']
 
-    def get_top_group_tag_values(self, group_id, environment_id, key, limit=3):
+    def get_top_group_tag_values(self, project_id, group_id, environment_id, key, limit=3):
         if db.is_postgres():
             # This doesnt guarantee percentage is accurate, but it does ensure
             # that the query has a maximum cost
@@ -453,9 +453,10 @@ class LegacyTagStorage(TagStorage):
             ).order_by('-times_seen')[:limit]
         )
 
-    def get_first_release(self, group_id):
+    def get_first_release(self, project_id, group_id):
         try:
             first_release = GroupTagValue.objects.filter(
+                project_id=project_id,
                 group_id=group_id,
                 key__in=('sentry:release', 'release'),
             ).order_by('first_seen')[0]
@@ -464,9 +465,10 @@ class LegacyTagStorage(TagStorage):
         else:
             return first_release.value
 
-    def get_last_release(self, group_id):
+    def get_last_release(self, project_id, group_id):
         try:
             last_release = GroupTagValue.objects.filter(
+                project_id=project_id,
                 group_id=group_id,
                 key__in=('sentry:release', 'release'),
             ).order_by('-last_seen')[0]
