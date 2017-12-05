@@ -437,5 +437,5 @@ class Group(Model):
         )
 
     def count_users_seen(self):
-        return tagstore.get_group_values_seen(
-            self.id, environment_id=None, key='sentry:user')[self.id]
+        return tagstore.get_groups_user_counts(
+            self.project_id, [self.id], environment_id=None)[self.id]

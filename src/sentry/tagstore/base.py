@@ -62,7 +62,7 @@ class TagStorage(Service):
         'delete_all_group_tag_keys',
         'delete_all_group_tag_values',
 
-        'get_group_values_seen',
+        'get_groups_user_counts',
         'get_group_event_ids',
         'get_group_tag_value_count',
         'get_top_group_tag_values',
@@ -365,9 +365,9 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_group_values_seen(self, group_ids, environment_id, key):
+    def get_groups_user_counts(self, project_id, group_ids, environment_id):
         """
-        >>> get_group_values_seen([1, 2], 3, 'key1')
+        >>> get_groups_user_counts(1, [2, 3], 4)
         """
         raise NotImplementedError
 

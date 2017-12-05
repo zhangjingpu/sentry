@@ -11,17 +11,14 @@ from __future__ import absolute_import
 import six
 
 from collections import defaultdict
-from datetime import timedelta
-from django.db import connections, router, IntegrityError, transaction
-from django.db.models import Q, Sum
-from django.utils import timezone
+from django.db import IntegrityError, transaction
+from django.db.models import Q
 from operator import or_
 from six.moves import reduce
 
 from sentry import buffer
 from sentry.tagstore import TagKeyStatus
 from sentry.tagstore.base import TagStorage
-from sentry.utils import db
 
 from .models import EventTag, GroupTagKey, GroupTagValue, TagKey, TagValue
 
@@ -319,6 +316,7 @@ class TagStorage(TagStorage):
         ).delete()
 
     def incr_tag_key_values_seen(self, project_id, environment_id, key, count=1):
+        # TODO: store in redis
         buffer.incr(TagKey,
                     columns={
                         'values_seen': count,
@@ -330,6 +328,7 @@ class TagStorage(TagStorage):
 
     def incr_tag_value_times_seen(self, project_id, environment_id,
                                   key, value, extra=None, count=1):
+        # TODO: store in redis, debounce extra
         buffer.incr(TagValue,
                     columns={
                         'times_seen': count,
@@ -342,6 +341,7 @@ class TagStorage(TagStorage):
                     extra=extra)
 
     def incr_group_tag_key_values_seen(self, project_id, group_id, environment_id, key, count=1):
+        # TODO: store in redis
         buffer.incr(GroupTagKey,
                     columns={
                         'values_seen': count,
@@ -354,6 +354,7 @@ class TagStorage(TagStorage):
 
     def incr_group_tag_value_times_seen(self, project_id, group_id, environment_id,
                                         key, value, extra=None, count=1):
+        # TODO: store in redis, debounce extra
         buffer.incr(GroupTagValue,
                     columns={
                         'times_seen': count,
@@ -366,22 +367,24 @@ class TagStorage(TagStorage):
                     extra=extra)
 
     def get_group_event_ids(self, project_id, group_id, environment_id, tags):
-        tagkeys = dict(
-            TagKey.objects.filter(
-                project_id=project_id,
-                key__in=tags.keys(),
-                status=TagKeyStatus.VISIBLE,
-            ).values_list('key', 'id')
+        tagkeys_qs = TagKey.objects.filter(
+            project_id=project_id,
+            key__in=tags.keys(),
+            status=TagKeyStatus.VISIBLE,
+            **self._get_environment_filter(environment_id)
         )
 
-        tagvalues = {
-            (t[1], t[2]): t[0]
-            for t in TagValue.objects.filter(
-                reduce(or_, (Q(key=k, value=v)
-                             for k, v in six.iteritems(tags))),
-                project_id=project_id,
-            ).values_list('id', 'key', 'value')
-        }
+        tagkeys = dict(tagkeys_qs.values_list('key', 'id'))
+
+        tagvalues_qs = TagValue.objects.filter(
+            reduce(or_, (Q(key_id=tagkeys[k], value=v)
+                         for k, v in six.iteritems(tags)
+                         if k in tagkeys)),
+            project_id=project_id,
+            **self._get_environment_filter(environment_id)
+        )
+
+        tagvalues = {(t[1], t[2]): t[0] for t in tagvalues_qs.values_list('id', 'key', 'value')}
 
         try:
             tag_lookups = [(tagkeys[k], tagvalues[(k, v)])
@@ -402,6 +405,7 @@ class TagStorage(TagStorage):
                 key_id=k,
                 value_id=v,
                 group_id=group_id,
+                **self._get_environment_filter(environment_id)
             ).values_list('event_id', flat=True)[:1000]
         )
 
@@ -414,6 +418,7 @@ class TagStorage(TagStorage):
                     value_id=v,
                     event_id__in=matches,
                     group_id=group_id,
+                    **self._get_environment_filter(environment_id)
                 ).values_list('event_id', flat=True)[:1000]
             )
             if not matches:
@@ -421,74 +426,87 @@ class TagStorage(TagStorage):
 
         return matches
 
-    def get_group_values_seen(self, group_ids, environment_id, key):
-        if isinstance(group_ids, six.integer_types):
-            qs = GroupTagKey.objects.filter(group_id=group_ids)
-        else:
-            qs = GroupTagKey.objects.filter(group_id__in=group_ids)
+    def get_groups_user_counts(self, project_id, group_ids, environment_id, key):
+        from sentry.tagstore.exceptions import TagKeyNotFound
+
+        try:
+            tagkey = self.get_tag_key(project_id, environment_id, 'sentry:user')
+        except TagKeyNotFound:
+            return defaultdict(int)
+
+        qs = GroupTagKey.objects.filter(
+            group_id__in=group_ids,
+            **self._get_environment_filter(environment_id)
+        )
 
         return defaultdict(int, qs.filter(
-            key=key,
+            key_id=tagkey.id,
         ).values_list('group_id', 'values_seen'))
 
     def get_group_tag_value_count(self, group_id, environment_id, key):
-        if db.is_postgres():
-            # This doesnt guarantee percentage is accurate, but it does ensure
-            # that the query has a maximum cost
-            using = router.db_for_read(GroupTagValue)
-            cursor = connections[using].cursor()
-            cursor.execute(
-                """
-                SELECT SUM(t)
-                FROM (
-                    SELECT times_seen as t
-                    FROM sentry_messagefiltervalue
-                    WHERE group_id = %s
-                    AND key = %s
-                    ORDER BY last_seen DESC
-                    LIMIT 10000
-                ) as a
-            """, [group_id, key]
-            )
-            return cursor.fetchone()[0] or 0
+        # TODO: fetch from redis
+        pass
 
-        cutoff = timezone.now() - timedelta(days=7)
-        return GroupTagValue.objects.filter(
-            group_id=group_id,
-            key=key,
-            last_seen__gte=cutoff,
-        ).aggregate(t=Sum('times_seen'))['t']
+        # if db.is_postgres():
+        #     # This doesnt guarantee percentage is accurate, but it does ensure
+        #     # that the query has a maximum cost
+        #     using = router.db_for_read(GroupTagValue)
+        #     cursor = connections[using].cursor()
+        #     cursor.execute(
+        #         """
+        #         SELECT SUM(t)
+        #         FROM (
+        #             SELECT times_seen as t
+        #             FROM sentry_messagefiltervalue
+        #             WHERE group_id = %s
+        #             AND key = %s
+        #             ORDER BY last_seen DESC
+        #             LIMIT 10000
+        #         ) as a
+        #     """, [group_id, key]
+        #     )
+        #     return cursor.fetchone()[0] or 0
+
+        # cutoff = timezone.now() - timedelta(days=7)
+        # return GroupTagValue.objects.filter(
+        #     group_id=group_id,
+        #     key=key,
+        #     last_seen__gte=cutoff,
+        # ).aggregate(t=Sum('times_seen'))['t']
 
     def get_top_group_tag_values(self, group_id, environment_id, key, limit=3):
-        if db.is_postgres():
-            # This doesnt guarantee percentage is accurate, but it does ensure
-            # that the query has a maximum cost
-            return list(
-                GroupTagValue.objects.raw(
-                    """
-                SELECT *
-                FROM (
-                    SELECT *
-                    FROM sentry_messagefiltervalue
-                    WHERE group_id = %%s
-                    AND key = %%s
-                    ORDER BY last_seen DESC
-                    LIMIT 10000
-                ) as a
-                ORDER BY times_seen DESC
-                LIMIT %d
-            """ % limit, [group_id, key]
-                )
-            )
+        # TODO: fetch from redis
+        pass
 
-        cutoff = timezone.now() - timedelta(days=7)
-        return list(
-            GroupTagValue.objects.filter(
-                group_id=group_id,
-                key=key,
-                last_seen__gte=cutoff,
-            ).order_by('-times_seen')[:limit]
-        )
+        # if db.is_postgres():
+        #     # This doesnt guarantee percentage is accurate, but it does ensure
+        #     # that the query has a maximum cost
+        #     return list(
+        #         GroupTagValue.objects.raw(
+        #             """
+        #         SELECT *
+        #         FROM (
+        #             SELECT *
+        #             FROM sentry_messagefiltervalue
+        #             WHERE group_id = %%s
+        #             AND key = %%s
+        #             ORDER BY last_seen DESC
+        #             LIMIT 10000
+        #         ) as a
+        #         ORDER BY times_seen DESC
+        #         LIMIT %d
+        #     """ % limit, [group_id, key]
+        #         )
+        #     )
+
+        # cutoff = timezone.now() - timedelta(days=7)
+        # return list(
+        #     GroupTagValue.objects.filter(
+        #         group_id=group_id,
+        #         key=key,
+        #         last_seen__gte=cutoff,
+        #     ).order_by('-times_seen')[:limit]
+        # )
 
     def get_first_release(self, group_id):
         try:
@@ -513,24 +531,59 @@ class TagStorage(TagStorage):
         return last_release.value
 
     def get_release_tags(self, project_ids, environment_id, versions):
-        return list(TagValue.objects.filter(
+        tagkey_ids = list(TagKey.objects.filter(
             project_id__in=project_ids,
             key='sentry:release',
+            **self._get_environment_filter(environment_id)
+        ).values_list('id', flat=True))
+
+        return list(TagValue.objects.filter(
+            project_id__in=project_ids,
+            key_id__in=tagkey_ids,
             value__in=versions,
+            **self._get_environment_filter(environment_id)
         ))
 
     def get_group_ids_for_users(self, project_ids, event_users, limit=100):
-        return list(GroupTagValue.objects.filter(
+        tagkey_ids = list(TagKey.objects.filter(
+            project_id__in=project_ids,
+            environment_id__isnull=True,
             key='sentry:user',
+        ).values_list('id', flat=True))
+
+        tagvalue_ids = list(TagValue.objects.filter(
+            project_id__in=project_ids,
+            environment_id__isnull=True,
+            key_id__in=tagkey_ids,
             value__in=[eu.tag_value for eu in event_users],
+        ).values_list('id', flat=True))
+
+        return list(GroupTagValue.objects.filter(
+            key_id__in=tagkey_ids,
+            value_id__in=tagvalue_ids,
             project_id__in=project_ids,
         ).order_by('-last_seen').values_list('group_id', flat=True)[:limit])
 
     def get_group_tag_values_for_users(self, event_users, limit=100):
-        tag_filters = [Q(value=eu.tag_value, project_id=eu.project_id) for eu in event_users]
-        return list(GroupTagValue.objects.filter(
-            reduce(or_, tag_filters),
+        project_ids = set([eu.project_id for eu in event_users])
+
+        tagkey_ids = list(TagKey.objects.filter(
+            project_id__in=project_ids,
             key='sentry:user',
+            environment_id__isnull=True,
+        ).values_list('id', flat=True))
+
+        tag_filters = [Q(value=eu.tag_value, project_id=eu.project_id) for eu in event_users]
+
+        tagvalue_ids = list(TagValue.objects.filter(
+            reduce(or_, tag_filters),
+            environment_id__isnull=True,
+            key_id__in=tagkey_ids,
+        ).values_list('id', flat=True))
+
+        return list(GroupTagValue.objects.filter(
+            key_id__in=tagkey_ids,
+            value_id__in=tagvalue_ids,
         ).order_by('-last_seen')[:limit])
 
     def get_tags_for_search_filter(self, project_id, tags):
@@ -584,18 +637,21 @@ class TagStorage(TagStorage):
         )
 
         for instance in gtk_qs:
-            instance.update(
-                values_seen=GroupTagValue.objects.filter(
-                    project_id=instance.project_id,
-                    group_id=instance.group_id,
-                    key=instance.key,
-                ).count(),
-            )
+            # TODO: redis
+            pass
+            # instance.update(
+            #     values_seen=GroupTagValue.objects.filter(
+            #         project_id=instance.project_id,
+            #         group_id=instance.group_id,
+            #         key=instance.key,
+            #     ).count(),
+            # )
 
     def get_tag_value_qs(self, project_id, environment_id, key, query=None):
         queryset = TagValue.objects.filter(
             project_id=project_id,
             key=key,
+            **self._get_environment_filter(environment_id)
         )
 
         if query:
@@ -607,6 +663,7 @@ class TagStorage(TagStorage):
         return GroupTagValue.objects.filter(
             group_id=group_id,
             key=key,
+            **self._get_environment_filter(environment_id)
         )
 
     def get_event_tag_qs(self, **kwargs):
