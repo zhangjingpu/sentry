@@ -305,13 +305,15 @@ class TagStorage(TagStorage):
 
         return deleted
 
-    def delete_all_group_tag_keys(self, group_id):
+    def delete_all_group_tag_keys(self, project_id, group_id):
         GroupTagKey.objects.filter(
+            project_id=project_id,
             group_id=group_id,
         ).delete()
 
-    def delete_all_group_tag_values(self, group_id):
+    def delete_all_group_tag_values(self, project_id, group_id):
         GroupTagValue.objects.filter(
+            project_id=project_id,
             group_id=group_id,
         ).delete()
 
@@ -427,21 +429,14 @@ class TagStorage(TagStorage):
         return matches
 
     def get_groups_user_counts(self, project_id, group_ids, environment_id, key):
-        from sentry.tagstore.exceptions import TagKeyNotFound
-
-        try:
-            tagkey = self.get_tag_key(project_id, environment_id, 'sentry:user')
-        except TagKeyNotFound:
-            return defaultdict(int)
-
         qs = GroupTagKey.objects.filter(
+            project_id=project_id,
             group_id__in=group_ids,
+            key__key=key,
             **self._get_environment_filter(environment_id)
         )
 
-        return defaultdict(int, qs.filter(
-            key_id=tagkey.id,
-        ).values_list('group_id', 'values_seen'))
+        return defaultdict(int, qs.values_list('group_id', 'values_seen'))
 
     def get_group_tag_value_count(self, group_id, environment_id, key):
         # TODO: fetch from redis
@@ -531,59 +526,28 @@ class TagStorage(TagStorage):
         return last_release.value
 
     def get_release_tags(self, project_ids, environment_id, versions):
-        tagkey_ids = list(TagKey.objects.filter(
-            project_id__in=project_ids,
-            key='sentry:release',
-            **self._get_environment_filter(environment_id)
-        ).values_list('id', flat=True))
-
         return list(TagValue.objects.filter(
             project_id__in=project_ids,
-            key_id__in=tagkey_ids,
+            key__key='sentry:release',
             value__in=versions,
             **self._get_environment_filter(environment_id)
         ))
 
     def get_group_ids_for_users(self, project_ids, event_users, limit=100):
-        tagkey_ids = list(TagKey.objects.filter(
-            project_id__in=project_ids,
-            environment_id__isnull=True,
-            key='sentry:user',
-        ).values_list('id', flat=True))
-
-        tagvalue_ids = list(TagValue.objects.filter(
-            project_id__in=project_ids,
-            environment_id__isnull=True,
-            key_id__in=tagkey_ids,
-            value__in=[eu.tag_value for eu in event_users],
-        ).values_list('id', flat=True))
-
         return list(GroupTagValue.objects.filter(
-            key_id__in=tagkey_ids,
-            value_id__in=tagvalue_ids,
             project_id__in=project_ids,
+            environment_id__isnull=True,
+            key__key='sentry:user',
+            value__value__in=[eu.tag_value for eu in event_users],
         ).order_by('-last_seen').values_list('group_id', flat=True)[:limit])
 
     def get_group_tag_values_for_users(self, event_users, limit=100):
-        project_ids = set([eu.project_id for eu in event_users])
-
-        tagkey_ids = list(TagKey.objects.filter(
-            project_id__in=project_ids,
-            key='sentry:user',
-            environment_id__isnull=True,
-        ).values_list('id', flat=True))
-
-        tag_filters = [Q(value=eu.tag_value, project_id=eu.project_id) for eu in event_users]
-
-        tagvalue_ids = list(TagValue.objects.filter(
-            reduce(or_, tag_filters),
-            environment_id__isnull=True,
-            key_id__in=tagkey_ids,
-        ).values_list('id', flat=True))
+        tag_filters = [Q(value__value=eu.tag_value, project_id=eu.project_id) for eu in event_users]
 
         return list(GroupTagValue.objects.filter(
-            key_id__in=tagkey_ids,
-            value_id__in=tagvalue_ids,
+            reduce(or_, tag_filters),
+            environment_id__isnull=True,
+            key__key='sentry:user',
         ).order_by('-last_seen')[:limit])
 
     def get_tags_for_search_filter(self, project_id, tags):
@@ -659,8 +623,9 @@ class TagStorage(TagStorage):
 
         return queryset
 
-    def get_group_tag_value_qs(self, group_id, environment_id, key):
+    def get_group_tag_value_qs(self, project_id, group_id, environment_id, key):
         return GroupTagValue.objects.filter(
+            project_id=project_id,
             group_id=group_id,
             key=key,
             **self._get_environment_filter(environment_id)

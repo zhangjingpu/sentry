@@ -309,15 +309,15 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def delete_all_group_tag_keys(self, group_id):
+    def delete_all_group_tag_keys(self, project_id, group_id):
         """
-        >>> delete_all_group_tag_keys(1)
+        >>> delete_all_group_tag_keys(1, 2)
         """
         raise NotImplementedError
 
-    def delete_all_group_tag_values(self, group_id):
+    def delete_all_group_tag_values(self, project_id, group_id):
         """
-        >>> delete_all_group_tag_values(1)
+        >>> delete_all_group_tag_values(1, 2)
         """
         raise NotImplementedError
 
@@ -359,9 +359,9 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_group_tag_value_qs(self, group_id, environment_id, key):
+    def get_group_tag_value_qs(self, project_id, group_id, environment_id, key):
         """
-        >>> get_group_tag_value_qs(1, 2, 'environment')
+        >>> get_group_tag_value_qs(1, 2, 3, 'environment')
         """
         raise NotImplementedError
 

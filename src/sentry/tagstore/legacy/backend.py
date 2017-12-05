@@ -271,12 +271,12 @@ class LegacyTagStorage(TagStorage):
 
         return deleted
 
-    def delete_all_group_tag_keys(self, group_id):
+    def delete_all_group_tag_keys(self, project_id, group_id):
         GroupTagKey.objects.filter(
             group_id=group_id,
         ).delete()
 
-    def delete_all_group_tag_values(self, group_id):
+    def delete_all_group_tag_values(self, project_id, group_id):
         GroupTagValue.objects.filter(
             group_id=group_id,
         ).delete()
@@ -566,7 +566,7 @@ class LegacyTagStorage(TagStorage):
 
         return queryset
 
-    def get_group_tag_value_qs(self, group_id, environment_id, key):
+    def get_group_tag_value_qs(self, project_id, group_id, environment_id, key):
         return GroupTagValue.objects.filter(
             group_id=group_id,
             key=key,

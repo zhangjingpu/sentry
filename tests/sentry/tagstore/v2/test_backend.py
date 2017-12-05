@@ -375,7 +375,7 @@ class V2TagStorage(TestCase):
 
         assert GroupTagKey.objects.count() == 1
 
-        self.ts.delete_all_group_tag_keys(self.proj1group1.id)
+        self.ts.delete_all_group_tag_keys(self.proj1.id, self.proj1group1.id)
 
         assert GroupTagKey.objects.count() == 0
 
@@ -392,6 +392,6 @@ class V2TagStorage(TestCase):
 
         assert GroupTagValue.objects.count() == 1
 
-        self.ts.delete_all_group_tag_values(self.proj1group1.id)
+        self.ts.delete_all_group_tag_values(self.proj1.id, self.proj1group1.id)
 
         assert GroupTagValue.objects.count() == 0

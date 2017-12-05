@@ -241,8 +241,8 @@ def migrate_events(caches, project, source_id, destination_id, fingerprints, eve
 
 
 def truncate_denormalizations(group):
-    tagstore.delete_all_group_tag_keys(group.id)
-    tagstore.delete_all_group_tag_values(group.id)
+    tagstore.delete_all_group_tag_keys(group.project_id, group.id)
+    tagstore.delete_all_group_tag_values(group.project_id, group.id)
 
     GroupRelease.objects.filter(
         group_id=group.id,
