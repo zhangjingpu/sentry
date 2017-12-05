@@ -74,6 +74,7 @@ import ProjectSettings from './views/projectSettings';
 import ProjectUserReportSettings from './views/projectUserReportSettings';
 import ProjectUserReports from './views/projectUserReports';
 import ProjectPlugins from './views/projectPlugins';
+import ProjectPluginDetails from './views/projectPluginDetails';
 import ReleaseAllEvents from './views/releaseAllEvents';
 import ReleaseArtifacts from './views/releaseArtifacts';
 import ReleaseCommits from './views/releases/releaseCommits';
@@ -224,6 +225,12 @@ const projectSettingsRoutes = [
     path="plugins/"
     name="Integrations"
     component={errorHandler(ProjectPlugins)}
+  />,
+  <Route
+    key="plugins/:pluginId/"
+    path="plugins/:pluginId/"
+    name="Integration Details"
+    component={errorHandler(ProjectPluginDetails)}
   />,
   <Route
     key="install/"
