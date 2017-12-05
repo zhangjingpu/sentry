@@ -4,13 +4,16 @@ __all__ = ['Integration']
 
 import logging
 
+from sentry.utils.pipeline import PipelineableProvider
 
-class Integration(object):
+
+class Integration(PipelineableProvider):
     """
     An integration describes a third party that can be registered within Sentry.
 
-    The core behavior is simply how to add the integration (the authentication
-    pipeline), and what kind of configuration is stored.
+    The core behavior is simply how to add the integration (the setup
+    pipeline), which will likely use a nested pipeline for identity
+    authentication, and what kind of configuration is stored.
 
     This is similar to Sentry's legacy 'plugin' information, except that an
     integration is lives as an instance in the database, and the ``Integration``
