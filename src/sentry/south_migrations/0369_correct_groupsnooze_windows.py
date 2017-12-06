@@ -4,6 +4,8 @@ from south.db import db
 from south.v2 import DataMigration
 from django.db import models
 
+from sentry.utils.query import RangeQuerySetWrapperWithProgressBar
+
 
 class Migration(DataMigration):
 
@@ -27,12 +29,18 @@ class Migration(DataMigration):
         # and orm['appname.ModelName'] for models in other applications.
         GroupSnooze = orm.GroupSnooze
 
-        GroupSnooze.objects.filter(window__isnull=False).update(
-            window=models.F('window') * 60,
+        snoozes = GroupSnooze.objects.filter(
+            models.Q(window__isnull=False) | models.Q(user_window__isnull=False),
         )
-        GroupSnooze.objects.filter(user_window__isnull=False).update(
-            user_window=models.F('user_window') * 60,
-        )
+        for snooze in RangeQuerySetWrapperWithProgressBar(snoozes):
+            if snooze.window is not None:
+                GroupSnooze.objects.filter(id=snooze.id).update(
+                    window=models.F('window') * 60,
+                )
+            if snooze.user_window is not None:
+                GroupSnooze.objects.filter(id=snooze.id).update(
+                    user_window=models.F('user_window') * 60,
+                )
 
     def backwards(self, orm):
         "Write your backwards methods here."
