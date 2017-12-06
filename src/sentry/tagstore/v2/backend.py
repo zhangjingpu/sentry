@@ -515,7 +515,7 @@ class TagStorage(TagStorage):
             first_release = GroupTagValue.objects.filter(
                 project_id=project_id,
                 group_id=group_id,
-                key__in=('sentry:release', 'release'),
+                _key__key__in=('sentry:release', 'release'),
             ).order_by('first_seen')[0]
         except IndexError:
             return None
@@ -527,7 +527,7 @@ class TagStorage(TagStorage):
             last_release = GroupTagValue.objects.filter(
                 project_id=project_id,
                 group_id=group_id,
-                key__in=('sentry:release', 'release'),
+                _key__key__in=('sentry:release', 'release'),
             ).order_by('-last_seen')[0]
         except IndexError:
             return None

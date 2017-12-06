@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import pytest
 
+from datetime import datetime
+
 from sentry.testutils import TestCase
 from sentry.tagstore import TagKeyStatus
 from sentry.tagstore.v2.backend import TagStorage
@@ -535,12 +537,52 @@ class V2TagStorage(TestCase):
         assert resp[1].group_id == self.proj1group1.id
 
     def test_get_first_release(self):
-        # self.ts.get_first_release(project_id, group_id)
-        pass
+        v1, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            'sentry:release',
+            '1.0')
+        v1.first_seen = datetime(2000, 1, 1)
+        v1.save()
+
+        v2, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            'sentry:release',
+            '2.0')
+        v2.first_seen = datetime(2000, 1, 2)
+        v2.save()
+
+        assert self.ts.get_first_release(
+            self.proj1.id,
+            self.proj1group1.id,
+        ) == '1.0'
 
     def test_get_last_release(self):
-        # self.ts.get_last_release(project_id, group_id)
-        pass
+        v1, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            'sentry:release',
+            '1.0')
+        v1.last_seen = datetime(2000, 1, 1)
+        v1.save()
+
+        v2, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            'sentry:release',
+            '2.0')
+        v2.last_seen = datetime(2000, 1, 2)
+        v2.save()
+
+        assert self.ts.get_last_release(
+            self.proj1.id,
+            self.proj1group1.id,
+        ) == '2.0'
 
     def test_get_release_tags(self):
         # self.ts.get_release_tags(project_ids, environment_id, versions)
