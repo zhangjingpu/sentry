@@ -585,33 +585,67 @@ class V2TagStorage(TestCase):
         ) == '2.0'
 
     def test_get_release_tags(self):
-        # self.ts.get_release_tags(project_ids, environment_id, versions)
-        pass
+        tv, _ = self.ts.get_or_create_tag_value(
+            self.proj1.id,
+            self.proj1env1.id,
+            'sentry:release',
+            '1.0'
+        )
+
+        assert self.ts.get_release_tags([self.proj1.id], self.proj1env1.id, ['1.0']) == [tv]
 
     def test_get_group_ids_for_users(self):
-        # self.ts.get_group_ids_for_users(project_ids, event_users, limit=100)
-        pass
+        from sentry.models import EventUser
+
+        v1, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            None,
+            'sentry:user',
+            'email:user@sentry.io')
+
+        eu = EventUser(project_id=self.proj1.id, email='user@sentry.io')
+
+        assert self.ts.get_group_ids_for_users(
+            [self.proj1.id],
+            [eu]) == [self.proj1group1.id]
 
     def test_get_group_tag_values_for_users(self):
-        # self.ts.get_group_tag_values_for_users(event_users, limit=100)
-        pass
+        from sentry.models import EventUser
+
+        v1, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            None,
+            'sentry:user',
+            'email:user@sentry.io')
+
+        eu = EventUser(project_id=self.proj1.id, email='user@sentry.io')
+
+        assert self.ts.get_group_tag_values_for_users([eu]) == [v1]
 
     def test_get_tags_for_search_filter(self):
         # self.ts.get_tags_for_search_filter(project_id, tags)
         pass
 
-    def test_update_group_tag_key_values_seen(self):
-        # self.ts.update_group_tag_key_values_seen(project_id, group_ids)
-        pass
-
-    def test_get_tag_value_qs(self):
-        # self.ts.get_tag_value_qs(project_id, environment_id, key, query=None)
-        pass
-
-    def test_get_group_tag_value_qs(self):
-        # self.ts.get_group_tag_value_qs(project_id, group_id, environment_id, key)
-        pass
-
     def test_update_group_for_events(self):
-        # self.ts.update_group_for_events(project_id, event_ids, destination_id)
-        pass
+        v1, _ = self.ts.get_or_create_tag_value(self.proj1.id, self.proj1env1.id, 'k1', 'v1')
+        v2, _ = self.ts.get_or_create_tag_value(self.proj1.id, self.proj1env1.id, 'k2', 'v2')
+        v3, _ = self.ts.get_or_create_tag_value(self.proj1.id, self.proj1env1.id, 'k3', 'v3')
+
+        tags = [(v1._key.id, v1.id), (v2._key.id, v2.id), (v3._key.id, v3.id)]
+        self.ts.create_event_tags(
+            project_id=self.proj1.id,
+            group_id=self.proj1group1.id,
+            environment_id=self.proj1env1.id,
+            event_id=self.proj1group1event1.id,
+            tags=tags
+        )
+
+        assert EventTag.objects.filter(group_id=self.proj1group2.id).count() == 0
+
+        self.ts.update_group_for_events(
+            self.proj1.id, [
+                self.proj1group1event1.id], self.proj1group2.id)
+
+        assert EventTag.objects.filter(group_id=self.proj1group2.id).count() == 3

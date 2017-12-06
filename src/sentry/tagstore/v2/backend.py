@@ -617,6 +617,7 @@ class TagStorage(TagStorage):
                 values_seen=GroupTagValue.objects.filter(
                     project_id=instance.project_id,
                     group_id=instance.group_id,
+                    environment_id=instance.environment_id,
                     key=instance.key,
                 ).count(),
             )
