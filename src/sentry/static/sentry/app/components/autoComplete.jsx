@@ -67,12 +67,12 @@ class AutoComplete extends React.Component {
   handleInputChange = ({onChange} = {}, e) => {
     let value = e.target.value;
 
-    // Should we force `isOpen: true`?
-    // It's possible to have menu closed but input with focus
-    // (i.e. hitting "Esc")
+    // We force `isOpen: true` here because:
+    // 1) it's possible to have menu closed but input with focus (i.e. hitting "Esc")
+    // 2) you select an item, input still has focus, and then change input
     this.setState({
       inputValue: value,
-      // isOpen: true,
+      isOpen: true,
     });
 
     callIfFunction(onChange, e);

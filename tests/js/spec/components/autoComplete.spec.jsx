@@ -126,6 +126,33 @@ describe('AutoComplete', function() {
     expect(wrapper.state('isOpen')).toBe(false);
   });
 
+  it('reopens dropdown menu after Escape is pressed and input is changed', function() {
+    input.simulate('focus');
+    expect(wrapper.state('isOpen')).toBe(true);
+
+    input.simulate('keyDown', {key: 'Escape'});
+    expect(wrapper.state('isOpen')).toBe(false);
+
+    input.simulate('change', {target: {value: 'a'}});
+    expect(wrapper.state('isOpen')).toBe(true);
+    expect(wrapper.instance().items.size).toBe(3);
+  });
+
+  it('reopens dropdown menu after item is selectted and then input is changed', function() {
+    input.simulate('focus');
+    expect(wrapper.state('isOpen')).toBe(true);
+
+    input.simulate('change', {target: {value: 'eapp'}});
+    expect(wrapper.state('isOpen')).toBe(true);
+    expect(wrapper.instance().items.size).toBe(1);
+    input.simulate('keyDown', {key: 'Enter'});
+    expect(wrapper.state('isOpen')).toBe(false);
+
+    input.simulate('change', {target: {value: 'app'}});
+    expect(wrapper.state('isOpen')).toBe(true);
+    expect(wrapper.instance().items.size).toBe(2);
+  });
+
   it('selects dropdown item by clicking and sets input to selected value', function() {
     input.simulate('focus');
     expect(wrapper.state('isOpen')).toBe(true);
