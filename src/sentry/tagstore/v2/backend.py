@@ -582,15 +582,17 @@ class TagStorage(TagStorage):
 
             elif v != ANY:
                 base_qs = GroupTagValue.objects.filter(
-                    key=k,
-                    value=v,
                     project_id=project_id,
+                    _key__key=k,
+                    _value__value=v,
+                    **self._get_environment_filter(environment_id)
                 )
 
             else:
                 base_qs = GroupTagValue.objects.filter(
-                    key=k,
                     project_id=project_id,
+                    _key__key=k,
+                    **self._get_environment_filter(environment_id)
                 ).distinct()
 
             if matches:
