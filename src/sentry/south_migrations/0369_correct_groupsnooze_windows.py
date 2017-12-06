@@ -34,9 +34,13 @@ class Migration(DataMigration):
         )
         for snooze in RangeQuerySetWrapperWithProgressBar(snoozes):
             if snooze.window is not None:
-                GroupSnooze.objects.filter(id=snooze.id).update(window=snooze.window * 60)
+                GroupSnooze.objects.filter(id=snooze.id).update(
+                    window=models.F('window') * 60,
+                )
             if snooze.user_window is not None:
-                GroupSnooze.objects.filter(id=snooze.id).update(user_window=snooze.user_window * 60)
+                GroupSnooze.objects.filter(id=snooze.id).update(
+                    user_window=models.F('user_window') * 60,
+                )
 
     def backwards(self, orm):
         "Write your backwards methods here."
