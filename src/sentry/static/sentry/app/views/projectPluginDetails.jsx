@@ -1,6 +1,7 @@
 import React from 'react';
 import AsyncView from './asyncView';
 import {t} from '../locale';
+import Button from '../components/buttons/button';
 import PluginConfig from '../components/pluginConfig';
 import ExternalLink from '../components/externalLink';
 import IndicatorStore from '../stores/indicatorStore';
@@ -24,30 +25,38 @@ export default class ProjectPlugins extends AsyncView {
     return value.split('//')[1];
   }
 
-  resetConfiguration() {
+  handleReset = () => {
     let {projectId, orgId, pluginId} = this.props.params;
     let loadingIndicator = IndicatorStore.add(t('Saving changes..'));
     this.api.request(`/projects/${orgId}/${projectId}/plugins/${pluginId}/reset/`, {
       method: 'POST',
       success: plugin => {
         this.setState({plugin});
+        IndicatorStore.addSuccess(t('Plugin was reset'));
       },
-
+      error: () => {
+        IndicatorStore.addError(t('An error occurred'));
+      },
       complete: () => IndicatorStore.remove(loadingIndicator),
     });
-  }
+  };
 
-  enable() {
+  enable = () => {
     this.toggleEnable(true);
-  }
+  };
 
-  disable() {
+  disable = () => {
     this.toggleEnable(false);
-  }
+  };
 
-  handleDisable() {
-    this.setState({plugin: Object.assign({}, this.state.plugin, {enabled: false})});
-  }
+  handleDisable = () => {
+    this.setState(prevState => ({
+      plugin: {
+        ...prevState.plugin,
+        enabled: false,
+      },
+    }));
+  };
 
   toggleEnable(shouldEnable) {
     let method = shouldEnable ? 'POST' : 'DELETE';
@@ -59,9 +68,16 @@ export default class ProjectPlugins extends AsyncView {
     this.api.request(`/projects/${orgId}/${projectId}/plugins/${pluginId}/`, {
       method,
       success: () => {
-        this.setState({
-          plugin: Object.assign({}, this.state.plugin, {enabled: shouldEnable}),
-        });
+        this.setState(prevState => ({
+          plugin: {
+            ...prevState.plugin,
+            enabled: shouldEnable,
+          },
+        }));
+        IndicatorStore.addSuccess(t('Plugin was updated'));
+      },
+      error: () => {
+        IndicatorStore.addError(t('An error occurred'));
       },
       complete: () => IndicatorStore.remove(loadingIndicator),
     });
@@ -70,36 +86,16 @@ export default class ProjectPlugins extends AsyncView {
   renderActions() {
     let {plugin} = this.state;
 
-    let reset = (
-      <button
-        type="submit"
-        className="btn btn-default"
-        onClick={() => this.resetConfiguration()}
-      >
-        {t('Reset Configuration')}
-      </button>
-    );
-
     let enable = (
-      <button
-        type="submit"
-        className="btn btn-default"
-        onClick={() => this.enable()}
-        style={{marginRight: '6px'}}
-      >
+      <Button onClick={this.enable} style={{marginRight: '6px'}}>
         {t('Enable Plugin')}
-      </button>
+      </Button>
     );
 
     let disable = (
-      <button
-        type="submit"
-        className="btn btn-danger"
-        onClick={() => this.disable()}
-        style={{marginRight: '6px'}}
-      >
+      <Button priority="danger" onClick={this.disable} style={{marginRight: '6px'}}>
         {t('Disable Plugin')}
-      </button>
+      </Button>
     );
 
     let toggleEnable = plugin.enabled ? disable : enable;
@@ -107,7 +103,7 @@ export default class ProjectPlugins extends AsyncView {
     return (
       <div className="pull-right">
         {plugin.canDisable && toggleEnable}
-        {reset}
+        <Button onClick={this.handleReset}>{t('Reset Configuration')}</Button>
       </div>
     );
   }
@@ -127,21 +123,21 @@ export default class ProjectPlugins extends AsyncView {
               organization={organization}
               project={project}
               data={plugin}
-              onDisablePlugin={() => this.handleDisable()}
+              onDisablePlugin={this.handleDisable}
             />
           </div>
           <div className="col-md-4 col-md-offset-1">
             <div className="plugin-meta">
-              <h4>Plugin Information</h4>
+              <h4>{t('Plugin Information')}</h4>
 
               <dl className="flat">
-                <dt>Name:</dt>
+                <dt>{t('Name')}</dt>
                 <dd>{plugin.name}</dd>
-                <dt>Author</dt>
+                <dt>{t('Author')}</dt>
                 <dd>{plugin.author.name}</dd>
                 {plugin.author.url && (
                   <div>
-                    <dt>URL</dt>
+                    <dt>{t('URL')}</dt>
                     <dd>
                       <ExternalLink href={plugin.author.url}>
                         {this.trimSchema(plugin.author.url)}
@@ -149,20 +145,20 @@ export default class ProjectPlugins extends AsyncView {
                     </dd>
                   </div>
                 )}
-                <dt>Version</dt>
+                <dt>{t('Version')}</dt>
                 <dd>{plugin.version}</dd>
               </dl>
 
               {plugin.description && (
                 <div>
-                  <h4>Description</h4>
+                  <h4>{t('Description')}</h4>
                   <p className="description">{plugin.description}</p>
                 </div>
               )}
 
               {plugin.resourceLinks && (
                 <div>
-                  <h4>Resources</h4>
+                  <h4>{t('Resources')}</h4>
                   <dl className="flat">
                     {plugin.resourceLinks.map(({title, url}) => (
                       <dd key={url}>
