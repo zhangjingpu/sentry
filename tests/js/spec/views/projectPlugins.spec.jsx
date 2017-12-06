@@ -39,9 +39,7 @@ describe('ProjectPlugins', function() {
   it('enables plugin', function() {
     let checkbox = wrapper.find('input[name="amazon-sqs"]');
 
-    wrapper
-      .find('input[name="amazon-sqs"]')
-      .simulate('change', {target: {checked: true}});
+    checkbox.simulate('change', {target: {checked: true}});
 
     expect(checkbox.props().checked).toBe(true);
   });
@@ -49,7 +47,7 @@ describe('ProjectPlugins', function() {
   it('disables plugin', function() {
     let checkbox = wrapper.find('input[name="github"]');
 
-    wrapper.find('input[name="github"]').simulate('change', {target: {checked: false}});
+    checkbox.simulate('change', {target: {checked: false}});
 
     expect(checkbox.props().checked).toBe(false);
   });

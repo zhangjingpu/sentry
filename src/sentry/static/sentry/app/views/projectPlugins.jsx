@@ -15,7 +15,7 @@ export default class ProjectPlugins extends AsyncView {
     return [['plugins', `/projects/${orgId}/${projectId}/plugins/`]];
   }
 
-  onToggle(pluginId, shouldEnable, idx) {
+  handleChange(pluginId, shouldEnable, idx) {
     let {projectId, orgId} = this.props.params;
 
     let method = shouldEnable ? 'POST' : 'DELETE';
@@ -30,6 +30,12 @@ export default class ProjectPlugins extends AsyncView {
         this.setState({
           plugins,
         });
+        IndicatorStore.addSuccess(
+          t(`Plugin was ${shouldEnable ? 'enabled' : 'disabled'}`)
+        );
+      },
+      error: () => {
+        IndicatorStore.addError(t('An error occurred'));
       },
       complete: () => IndicatorStore.remove(loadingIndicator),
     });
@@ -46,8 +52,8 @@ export default class ProjectPlugins extends AsyncView {
           <table className="table integrations simple">
             <thead>
               <tr>
-                <th colSpan={2}>Integration</th>
-                <th className="align-right">Enabled</th>
+                <th colSpan={2}>{t('Integration')}</th>
+                <th className="align-right">{t('Enabled')}</th>
               </tr>
             </thead>
             <tbody>
@@ -70,7 +76,7 @@ export default class ProjectPlugins extends AsyncView {
                               {' '}
                               &middot;{' '}
                               <a href={`/${orgId}/${projectId}/settings/plugins/${id}`}>
-                                Configure plugin
+                                {t('Configure plugin')}
                               </a>
                             </span>
                           )}
@@ -80,7 +86,7 @@ export default class ProjectPlugins extends AsyncView {
                         <Checkbox
                           name={slug}
                           checked={enabled}
-                          onChange={evt => this.onToggle(id, !enabled, idx)}
+                          onChange={evt => this.handleChange(id, !enabled, idx)}
                         />
                       </td>
                     </tr>
