@@ -26,16 +26,8 @@ from time import time
 
 from sentry import filters
 from sentry.cache import default_cache
-from sentry.constants import (
-    CLIENT_RESERVED_ATTRS,
-    DEFAULT_LOG_LEVEL,
-    LOG_LEVELS_MAP,
-    MAX_TAG_VALUE_LENGTH,
-    MAX_TAG_KEY_LENGTH,
-    VALID_PLATFORMS,
-)
-from sentry.db.models import BoundedIntegerField
-from sentry.interfaces.base import get_interface, InterfaceValidationError
+from sentry.constants import VERSION_LENGTH
+from sentry.interfaces.base import get_interface
 from sentry.event_manager import EventManager
 from sentry.models import EventError, ProjectKey, upload_minidump, merge_minidump_event
 from sentry.tasks.store import preprocess_event, \
@@ -468,7 +460,7 @@ class MinidumpApiHelper(ClientApiHelper):
 
 class SecurityApiHelper(ClientApiHelper):
 
-    report_interfaces = ('sentry.interfaces.Csp', 'hpkp')
+    report_interfaces = ('sentry.interfaces.Csp', 'hpkp', 'expectct', 'expectstaple')
 
     def origin_from_request(self, request):
         # In the case of security reports, the origin is not available at the
