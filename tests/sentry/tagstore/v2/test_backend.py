@@ -625,8 +625,21 @@ class V2TagStorage(TestCase):
         assert self.ts.get_group_tag_values_for_users([eu]) == [v1]
 
     def test_get_group_ids_for_search_filter(self):
-        # self.ts.get_group_ids_for_search_filter(project_id, tags)
-        pass
+        tags = {
+            'foo': 'bar',
+            'baz': 'quux',
+        }
+
+        for k, v in tags.items():
+            v1, _ = self.ts.get_or_create_group_tag_value(
+                self.proj1.id,
+                self.proj1group1.id,
+                self.proj1env1.id,
+                k,
+                v)
+
+        assert self.ts.get_group_ids_for_search_filter(
+            self.proj1.id, self.proj1env1.id, tags) == [self.proj1group1.id]
 
     def test_update_group_for_events(self):
         v1, _ = self.ts.get_or_create_tag_value(self.proj1.id, self.proj1env1.id, 'k1', 'v1')
