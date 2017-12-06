@@ -574,5 +574,8 @@ class LegacyTagStorage(TagStorage):
             key=key,
         )
 
-    def get_event_tag_qs(self, **kwargs):
-        return EventTag.objects.filter(**kwargs)
+    def update_group_for_events(self, project_id, event_ids, destination_id):
+        return EventTag.objects.filter(
+            project_id=project_id,
+            event_id__in=event_ids,
+        ).update(group_id=destination_id)

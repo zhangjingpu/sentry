@@ -77,10 +77,10 @@ class TagStorage(Service):
         'get_group_tag_values_for_users',
         'get_tags_for_search_filter',
         'update_group_tag_key_values_seen',
+        'update_group_for_events',
 
         'get_tag_value_qs',
         'get_group_tag_value_qs',
-        'get_event_tag_qs',
     )
 
     def setup_deletions(self, tagkey_model, tagvalue_model, grouptagkey_model,
@@ -419,9 +419,9 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_event_tag_qs(self, **kwargs):
+    def update_group_for_events(self, project_id, event_ids, destination_id):
         """
-        >>> get_event_tag_qs(event_id=1, key_id=2)
+        >>> update_group_for_events(1, [2, 3], 4)
         """
         raise NotImplementedError
 

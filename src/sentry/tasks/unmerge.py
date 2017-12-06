@@ -220,10 +220,11 @@ def migrate_events(caches, project, source_id, destination_id, fingerprints, eve
     for event in events:
         event.group = destination
 
-    tagstore.get_event_tag_qs(
+    tagstore.update_group_for_events(
         project_id=project.id,
-        event_id__in=event_id_set,
-    ).update(group_id=destination_id)
+        event_ids=event_id_set,
+        destination_id=destination_id
+    )
 
     event_event_id_set = set(event.event_id for event in events)
 

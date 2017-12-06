@@ -326,6 +326,7 @@ class TagStorage(TagStorage):
                     },
                     filters={
                         'project_id': project_id,
+                        'environment_id': environment_id,
                         'key': key,
                     })
 
@@ -337,6 +338,7 @@ class TagStorage(TagStorage):
                     },
                     filters={
                         'project_id': project_id,
+                        'environment_id': environment_id,
                         'key': key,
                         'value': value,
                     },
@@ -350,6 +352,7 @@ class TagStorage(TagStorage):
                     filters={
                         'project_id': project_id,
                         'group_id': group_id,
+                        'environment_id': environment_id,
                         'key': key,
                     })
 
@@ -360,7 +363,9 @@ class TagStorage(TagStorage):
                         'times_seen': count,
                     },
                     filters={
+                        'project_id': project_id,
                         'group_id': group_id,
+                        'environment_id': environment_id,
                         'key': key,
                         'value': value,
                     },
@@ -495,9 +500,10 @@ class TagStorage(TagStorage):
             ).order_by('-times_seen')[:limit]
         )
 
-    def get_first_release(self, group_id):
+    def get_first_release(self, project_id, group_id):
         try:
             first_release = GroupTagValue.objects.filter(
+                project_id=project_id,
                 group_id=group_id,
                 key__in=('sentry:release', 'release'),
             ).order_by('first_seen')[0]
@@ -506,9 +512,10 @@ class TagStorage(TagStorage):
         else:
             return first_release.value
 
-    def get_last_release(self, group_id):
+    def get_last_release(self, project_id, group_id):
         try:
             last_release = GroupTagValue.objects.filter(
+                project_id=project_id,
                 group_id=group_id,
                 key__in=('sentry:release', 'release'),
             ).order_by('-last_seen')[0]
@@ -624,8 +631,11 @@ class TagStorage(TagStorage):
             **self._get_environment_filter(environment_id)
         )
 
-    def get_event_tag_qs(self, **kwargs):
-        return EventTag.objects.filter(**kwargs)
+    def update_group_for_events(self, project_id, event_ids, destination_id):
+        return EventTag.objects.filter(
+            project_id=project_id,
+            event_id__in=event_ids,
+        ).update(group_id=destination_id)
 
     def _get_environment_filter(self, environment_id):
         if environment_id is None:

@@ -395,3 +395,71 @@ class V2TagStorage(TestCase):
         self.ts.delete_all_group_tag_values(self.proj1.id, self.proj1group1.id)
 
         assert GroupTagValue.objects.count() == 0
+
+    def test_incr_tag_key_values_seen(self):
+        pass
+
+    def test_incr_tag_value_times_seen(self):
+        pass
+
+    def test_incr_group_tag_key_values_seen(self):
+        pass
+
+    def test_incr_group_tag_value_times_seen(self):
+        pass
+
+    def test_get_group_event_ids(self):
+        # self.ts.get_group_event_ids(project_id, group_id, environment_id, tags)
+        pass
+
+    def test_get_groups_user_counts(self):
+        # self.ts.get_groups_user_counts(self, project_id, group_ids, environment_id, key)
+        pass
+
+    def test_get_group_tag_value_count(self):
+        # self.ts.get_group_tag_value_count(project_id, group_id, environment_id, key)
+        pass
+
+    def test_get_top_group_tag_values(self):
+        # self.ts.get_top_group_tag_values(project_id, group_id, environment_id, key, limit=3)
+        pass
+
+    def test_get_first_release(self):
+        # self.ts.get_first_release(project_id, group_id)
+        pass
+
+    def test_get_last_release(self):
+        # self.ts.get_last_release(project_id, group_id)
+        pass
+
+    def test_get_release_tags(self):
+        # self.ts.get_release_tags(project_ids, environment_id, versions)
+        pass
+
+    def test_get_group_ids_for_users(self):
+        # self.ts.get_group_ids_for_users(project_ids, event_users, limit=100)
+        pass
+
+    def test_get_group_tag_values_for_users(self):
+        # self.ts.get_group_tag_values_for_users(event_users, limit=100)
+        pass
+
+    def test_get_tags_for_search_filter(self):
+        # self.ts.get_tags_for_search_filter(project_id, tags)
+        pass
+
+    def test_update_group_tag_key_values_seen(self):
+        # self.ts.update_group_tag_key_values_seen(project_id, group_ids)
+        pass
+
+    def test_get_tag_value_qs(self):
+        # self.ts.get_tag_value_qs(project_id, environment_id, key, query=None)
+        pass
+
+    def test_get_group_tag_value_qs(self):
+        # self.ts.get_group_tag_value_qs(project_id, group_id, environment_id, key)
+        pass
+
+    def test_update_group_for_events(self):
+        # self.ts.update_group_for_events(project_id, event_ids, destination_id)
+        pass
