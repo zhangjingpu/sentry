@@ -15,9 +15,12 @@ class V2TagStorage(TestCase):
 
         self.proj1 = self.create_project()
         self.proj1group1 = self.create_group(self.proj1)
+        self.proj1group2 = self.create_group(self.proj1)
         self.proj1env1 = self.create_environment(project=self.proj1)
         self.proj1env2 = self.create_environment(project=self.proj1)
         self.proj1group1event1 = self.create_event(project=self.proj1, group=self.proj1group1)
+        self.proj1group1event2 = self.create_event(project=self.proj1, group=self.proj1group1)
+        self.proj1group1event3 = self.create_event(project=self.proj1, group=self.proj1group1)
 
         self.proj2 = self.create_project()
         self.proj2group1 = self.create_group(self.proj2)
@@ -396,33 +399,140 @@ class V2TagStorage(TestCase):
 
         assert GroupTagValue.objects.count() == 0
 
-    def test_incr_tag_key_values_seen(self):
-        pass
-
-    def test_incr_tag_value_times_seen(self):
-        pass
-
-    def test_incr_group_tag_key_values_seen(self):
-        pass
-
-    def test_incr_group_tag_value_times_seen(self):
-        pass
-
     def test_get_group_event_ids(self):
-        # self.ts.get_group_event_ids(project_id, group_id, environment_id, tags)
-        pass
+        tags = {
+            'abc': 'xyz',
+            'foo': 'bar',
+            'baz': 'quux',
+        }
+
+        def _create_tags_for_dict(tags):
+            ids = []
+            for k, v in tags.items():
+                key, _ = self.ts.get_or_create_tag_key(self.proj1.id, self.proj1env1.id, k)
+                value, _ = self.ts.get_or_create_tag_value(self.proj1.id, self.proj1env1.id, k, v)
+                ids.append((key.id, value.id))
+            return ids
+
+        tags_ids = _create_tags_for_dict(tags)
+
+        # 2 events with the same tags
+        for event in (self.proj1group1event1, self.proj1group1event2):
+            self.ts.create_event_tags(
+                project_id=self.proj1.id,
+                group_id=self.proj1group1.id,
+                environment_id=self.proj1env1.id,
+                event_id=event.id,
+                tags=tags_ids,
+            )
+
+        different_tags = {
+            'abc': 'DIFFERENT',
+            'foo': 'bar',
+            'baz': 'quux',
+        }
+
+        different_tags_ids = _create_tags_for_dict(different_tags)
+
+        # 1 event with different tags
+        self.ts.create_event_tags(
+            project_id=self.proj1.id,
+            group_id=self.proj1group1.id,
+            environment_id=self.proj1env1.id,
+            event_id=self.proj1group1event3.id,
+            tags=different_tags_ids,
+        )
+
+        assert len(
+            self.ts.get_group_event_ids(
+                self.proj1.id,
+                self.proj1group1.id,
+                self.proj1env1.id,
+                tags)) == 2
 
     def test_get_groups_user_counts(self):
-        # self.ts.get_groups_user_counts(self, project_id, group_ids, environment_id, key)
-        pass
+        k1, _ = self.ts.get_or_create_group_tag_key(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            'sentry:user')
+        k1.values_seen = 7
+        k1.save()
+
+        k2, _ = self.ts.get_or_create_group_tag_key(
+            self.proj1.id,
+            self.proj1group2.id,
+            self.proj1env1.id,
+            'sentry:user')
+        k2.values_seen = 11
+        k2.save()
+
+        assert dict(self.ts.get_groups_user_counts(
+            self.proj1.id,
+            [self.proj1group1.id, self.proj1group2.id],
+            self.proj1env1.id).items()) == {k1.id: 7, k2.id: 11}
 
     def test_get_group_tag_value_count(self):
-        # self.ts.get_group_tag_value_count(project_id, group_id, environment_id, key)
-        pass
+        v1, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            self.key1,
+            'value1')
+        v1.times_seen = 7
+        v1.save()
+
+        v2, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            self.key1,
+            'value2')
+        v2.times_seen = 11
+        v2.save()
+
+        assert self.ts.get_group_tag_value_count(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            self.key1,
+        ) == 18
 
     def test_get_top_group_tag_values(self):
-        # self.ts.get_top_group_tag_values(project_id, group_id, environment_id, key, limit=3)
-        pass
+        v1, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            self.key1,
+            'value1')
+        v1.times_seen = 7
+        v1.save()
+
+        v2, _ = self.ts.get_or_create_group_tag_value(
+            self.proj1.id,
+            self.proj1group1.id,
+            self.proj1env1.id,
+            self.key1,
+            'value2')
+        v2.times_seen = 11
+        v2.save()
+
+        resp = list(
+            self.ts.get_top_group_tag_values(
+                self.proj1.id,
+                self.proj1group1.id,
+                self.proj1env1.id,
+                self.key1,
+            )
+        )
+
+        assert resp[0].times_seen == 11
+        assert resp[0].key == self.key1
+        assert resp[0].group_id == self.proj1group1.id
+
+        assert resp[1].times_seen == 7
+        assert resp[1].key == self.key1
+        assert resp[1].group_id == self.proj1group1.id
 
     def test_get_first_release(self):
         # self.ts.get_first_release(project_id, group_id)

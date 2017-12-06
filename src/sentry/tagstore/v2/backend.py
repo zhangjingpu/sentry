@@ -372,24 +372,24 @@ class TagStorage(TagStorage):
                     extra=extra)
 
     def get_group_event_ids(self, project_id, group_id, environment_id, tags):
-        tagkeys_qs = TagKey.objects.filter(
-            project_id=project_id,
-            key__in=tags.keys(),
-            status=TagKeyStatus.VISIBLE,
-            **self._get_environment_filter(environment_id)
+        tagkeys = dict(
+            TagKey.objects.filter(
+                project_id=project_id,
+                key__in=tags.keys(),
+                status=TagKeyStatus.VISIBLE,
+                **self._get_environment_filter(environment_id)
+            ).values_list('key', 'id')
         )
 
-        tagkeys = dict(tagkeys_qs.values_list('key', 'id'))
-
-        tagvalues_qs = TagValue.objects.filter(
-            reduce(or_, (Q(key_id=tagkeys[k], value=v)
-                         for k, v in six.iteritems(tags)
-                         if k in tagkeys)),
-            project_id=project_id,
-            **self._get_environment_filter(environment_id)
-        )
-
-        tagvalues = {(t[1], t[2]): t[0] for t in tagvalues_qs.values_list('id', 'key', 'value')}
+        tagvalues = {
+            (t[1], t[2]): t[0]
+            for t in TagValue.objects.filter(
+                reduce(or_, (Q(_key__key=k, value=v)
+                             for k, v in six.iteritems(tags))),
+                project_id=project_id,
+                **self._get_environment_filter(environment_id)
+            ).values_list('id', '_key__key', 'value')
+        }
 
         try:
             tag_lookups = [(tagkeys[k], tagvalues[(k, v)])
@@ -407,9 +407,10 @@ class TagStorage(TagStorage):
         k, v = tag_lookups.pop()
         matches = list(
             EventTag.objects.filter(
-                key_id=k,
-                value_id=v,
+                project_id=project_id,
                 group_id=group_id,
+                _key_id=k,
+                _value_id=v,
                 **self._get_environment_filter(environment_id)
             ).values_list('event_id', flat=True)[:1000]
         )
@@ -419,10 +420,11 @@ class TagStorage(TagStorage):
         for k, v in tag_lookups:
             matches = list(
                 EventTag.objects.filter(
-                    key_id=k,
-                    value_id=v,
-                    event_id__in=matches,
+                    project_id=project_id,
                     group_id=group_id,
+                    event_id__in=matches,
+                    _key_id=k,
+                    _value_id=v,
                     **self._get_environment_filter(environment_id)
                 ).values_list('event_id', flat=True)[:1000]
             )
@@ -431,11 +433,11 @@ class TagStorage(TagStorage):
 
         return matches
 
-    def get_groups_user_counts(self, project_id, group_ids, environment_id, key):
+    def get_groups_user_counts(self, project_id, group_ids, environment_id):
         qs = GroupTagKey.objects.filter(
             project_id=project_id,
             group_id__in=group_ids,
-            key__key=key,
+            _key__key='sentry:user',
             **self._get_environment_filter(environment_id)
         )
 
@@ -452,21 +454,25 @@ class TagStorage(TagStorage):
                 SELECT SUM(t)
                 FROM (
                     SELECT times_seen as t
-                    FROM sentry_messagefiltervalue
-                    WHERE group_id = %s
-                    AND key = %s
+                    FROM tagstore_grouptagvalue
+                    INNER JOIN tagstore_tagkey
+                    ON (tagstore_grouptagvalue.key_id = tagstore_tagkey.id)
+                    WHERE tagstore_grouptagvalue.group_id = %s
+                    AND tagstore_grouptagvalue.environment_id = %s
+                    AND tagstore_tagkey.key = %s
                     ORDER BY last_seen DESC
                     LIMIT 10000
                 ) as a
-            """, [group_id, key]
+            """, [group_id, environment_id, key]
             )
             return cursor.fetchone()[0] or 0
 
         cutoff = timezone.now() - timedelta(days=7)
         return GroupTagValue.objects.filter(
             group_id=group_id,
-            key=key,
+            _key__key=key,
             last_seen__gte=cutoff,
+            **self._get_environment_filter(environment_id)
         ).aggregate(t=Sum('times_seen'))['t']
 
     def get_top_group_tag_values(self, project_id, group_id, environment_id, key, limit=3):
@@ -479,15 +485,18 @@ class TagStorage(TagStorage):
                 SELECT *
                 FROM (
                     SELECT *
-                    FROM sentry_messagefiltervalue
-                    WHERE group_id = %%s
-                    AND key = %%s
+                    FROM tagstore_grouptagvalue
+                    INNER JOIN tagstore_tagkey
+                    ON (tagstore_grouptagvalue.key_id = tagstore_tagkey.id)
+                    WHERE tagstore_grouptagvalue.group_id = %%s
+                    AND tagstore_grouptagvalue.environment_id = %%s
+                    AND tagstore_tagkey.key = %%s
                     ORDER BY last_seen DESC
                     LIMIT 10000
                 ) as a
                 ORDER BY times_seen DESC
                 LIMIT %d
-            """ % limit, [group_id, key]
+            """ % limit, [group_id, environment_id, key]
                 )
             )
 
@@ -495,8 +504,9 @@ class TagStorage(TagStorage):
         return list(
             GroupTagValue.objects.filter(
                 group_id=group_id,
-                key=key,
+                _key__key=key,
                 last_seen__gte=cutoff,
+                **self._get_environment_filter(environment_id)
             ).order_by('-times_seen')[:limit]
         )
 
@@ -527,7 +537,7 @@ class TagStorage(TagStorage):
     def get_release_tags(self, project_ids, environment_id, versions):
         return list(TagValue.objects.filter(
             project_id__in=project_ids,
-            key__key='sentry:release',
+            _key__key='sentry:release',
             value__in=versions,
             **self._get_environment_filter(environment_id)
         ))
@@ -536,20 +546,20 @@ class TagStorage(TagStorage):
         return list(GroupTagValue.objects.filter(
             project_id__in=project_ids,
             environment_id__isnull=True,
-            key__key='sentry:user',
-            value__value__in=[eu.tag_value for eu in event_users],
+            _key__key='sentry:user',
+            _value__value__in=[eu.tag_value for eu in event_users],
         ).order_by('-last_seen').values_list('group_id', flat=True)[:limit])
 
     def get_group_tag_values_for_users(self, event_users, limit=100):
         tag_filters = [
-            Q(value__value=eu.tag_value, project_id=eu.project_id)
+            Q(_value__value=eu.tag_value, project_id=eu.project_id)
             for eu in event_users
         ]
 
         return list(GroupTagValue.objects.filter(
             reduce(or_, tag_filters),
             environment_id__isnull=True,
-            key__key='sentry:user',
+            _key__key='sentry:user',
         ).order_by('-last_seen')[:limit])
 
     def get_tags_for_search_filter(self, project_id, tags):

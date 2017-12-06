@@ -385,14 +385,13 @@ class LegacyTagStorage(TagStorage):
         return matches
 
     def get_groups_user_counts(self, project_id, group_ids, environment_id):
-        if isinstance(group_ids, six.integer_types):
-            qs = GroupTagKey.objects.filter(group_id=group_ids)
-        else:
-            qs = GroupTagKey.objects.filter(group_id__in=group_ids)
+        qs = GroupTagKey.objects.filter(
+            project_id=project_id,
+            group_id__in=group_ids,
+            key='sentry:user'
+        )
 
-        return defaultdict(int, qs.filter(
-            key='sentry:user',
-        ).values_list('group_id', 'values_seen'))
+        return defaultdict(int, qs.values_list('group_id', 'values_seen'))
 
     def get_group_tag_value_count(self, project_id, group_id, environment_id, key):
         if db.is_postgres():
