@@ -69,7 +69,7 @@ const Button = React.createClass({
 
     let isPrimary = priority === 'primary' && !disabled;
     let isDanger = priority === 'danger' && !disabled;
-    let isLink = priority === 'link' && !disabled;
+    let isLink = priority === 'link';
 
     let cx = classNames(className, 'button', {
       tip: !!title,
