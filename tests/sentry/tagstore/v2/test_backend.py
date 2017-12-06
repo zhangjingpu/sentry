@@ -624,8 +624,8 @@ class V2TagStorage(TestCase):
 
         assert self.ts.get_group_tag_values_for_users([eu]) == [v1]
 
-    def test_get_tags_for_search_filter(self):
-        # self.ts.get_tags_for_search_filter(project_id, tags)
+    def test_get_group_ids_for_search_filter(self):
+        # self.ts.get_group_ids_for_search_filter(project_id, tags)
         pass
 
     def test_update_group_for_events(self):

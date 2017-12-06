@@ -497,7 +497,7 @@ class LegacyTagStorage(TagStorage):
             key='sentry:user',
         ).order_by('-last_seen')[:limit])
 
-    def get_tags_for_search_filter(self, project_id, tags):
+    def get_group_ids_for_search_filter(self, project_id, environment_id, tags):
         from sentry.search.base import ANY, EMPTY
         # Django doesnt support union, so we limit results and try to find
         # reasonable matches

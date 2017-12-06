@@ -75,7 +75,7 @@ class TagStorage(Service):
         'incr_group_tag_value_times_seen',
         'get_group_ids_for_users',
         'get_group_tag_values_for_users',
-        'get_tags_for_search_filter',
+        'get_group_ids_for_search_filter',
         'update_group_tag_key_values_seen',
         'update_group_for_events',
 
@@ -413,9 +413,9 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_tags_for_search_filter(self, project_id, tags):
+    def get_group_ids_for_search_filter(self, project_id, environment_id, tags):
         """
-        >>> get_tags_for_search_filter(1, [('key1', 'value1'), ('key2', 'value2')])
+        >>> get_group_ids_for_search_filter(1, 2, [('key1', 'value1'), ('key2', 'value2')])
         """
         raise NotImplementedError
 
