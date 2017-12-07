@@ -3,7 +3,7 @@ import React from 'react';
 import Reflux from 'reflux';
 import styled from 'react-emotion';
 
-import OrganizationStore from '../../../stores/organizationStore';
+import OrganizationsStore from '../../../stores/organizationsStore';
 import Link from '../../../components/link';
 import SentryTypes from '../../../proptypes';
 import recreateRoute from '../../../utils/recreateRoute';
@@ -48,7 +48,7 @@ const StyledLink = styled(Link)`
 
 const withOrganizations = WrappedComponent =>
   React.createClass({
-    mixins: [Reflux.connect(OrganizationStore, 'organizations')],
+    mixins: [Reflux.connect(OrganizationsStore, 'organizations')],
     render() {
       return (
         <WrappedComponent organizations={this.state.organizations} {...this.props} />
