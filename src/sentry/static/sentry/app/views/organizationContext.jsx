@@ -10,7 +10,7 @@ import LoadingIndicator from '../components/loadingIndicator';
 import BroadcastModal from '../components/broadcastModal';
 import SentryTypes from '../proptypes';
 import TeamStore from '../stores/teamStore';
-import ProjectStore from '../stores/projectStore';
+import ProjectsStore from '../stores/projectsStore';
 import ProjectActions from '../actions/projectActions';
 import ConfigStore from '../stores/configStore';
 
@@ -101,7 +101,7 @@ const OrganizationContext = React.createClass({
         });
 
         TeamStore.loadInitialData(data.teams);
-        ProjectStore.loadInitialData(
+        ProjectsStore.loadInitialData(
           data.teams.reduce((out, team) => {
             return out.concat(team.projects);
           }, [])
