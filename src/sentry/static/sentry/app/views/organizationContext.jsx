@@ -14,8 +14,6 @@ import ProjectsStore from '../stores/projectsStore';
 import ProjectActions from '../actions/projectActions';
 import ConfigStore from '../stores/configStore';
 
-import OrganizationState from '../mixins/organizationState';
-
 import {t} from '../locale';
 
 let ERROR_TYPES = {
@@ -31,11 +29,7 @@ const OrganizationContext = React.createClass({
     organization: SentryTypes.Organization,
   },
 
-  mixins: [
-    ApiMixin,
-    OrganizationState,
-    Reflux.listenTo(ProjectActions.createSuccess, 'onProjectCreation'),
-  ],
+  mixins: [ApiMixin, Reflux.listenTo(ProjectActions.createSuccess, 'onProjectCreation')],
 
   getInitialState() {
     return {
