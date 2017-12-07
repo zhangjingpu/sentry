@@ -8,6 +8,13 @@ import Panel from './components/panel';
 import PanelHeader from './components/panelHeader';
 import PanelBody from './components/panelBody';
 
+import IconDocs from '../../icons/icon-docs';
+import IconLaptop from '../../icons/icon-laptop';
+import IconLock from '../../icons/icon-lock';
+import IconStack from '../../icons/icon-stack';
+import IconSupport from '../../icons/icon-support';
+import IconUser from '../../icons/icon-user';
+
 class SettingsIndex extends React.Component {
   render() {
     return (
@@ -16,7 +23,9 @@ class SettingsIndex extends React.Component {
           <Box w={1 / 3} px={2}>
             <Panel>
               <HomePanelHeader>
-                <HomeIcon color="blue" />
+                <HomeIcon color="blue">
+                  <IconUser size={44} />
+                </HomeIcon>
                 My Account
               </HomePanelHeader>
               <HomePanelBody>
@@ -39,7 +48,9 @@ class SettingsIndex extends React.Component {
             {/* if admin */}
             <Panel>
               <HomePanelHeader>
-                <HomeIcon />
+                <HomeIcon color="green">
+                  <IconStack size={44} />
+                </HomeIcon>
                 Organization Name
               </HomePanelHeader>
               <HomePanelBody>
@@ -61,7 +72,9 @@ class SettingsIndex extends React.Component {
           <Box w={1 / 3} px={2}>
             <Panel>
               <HomePanelHeader>
-                <HomeIcon />
+                <HomeIcon color="orange">
+                  <IconDocs size={48} />
+                </HomeIcon>
                 Documentation
               </HomePanelHeader>
               <HomePanelBody>
@@ -83,7 +96,9 @@ class SettingsIndex extends React.Component {
           <Box w={1 / 3} px={2}>
             <Panel>
               <HomePanelHeader>
-                <HomeIcon />
+                <HomeIcon color="purple">
+                  <IconSupport size={48} />
+                </HomeIcon>
                 Support
               </HomePanelHeader>
               <HomePanelBody>
@@ -106,7 +121,9 @@ class SettingsIndex extends React.Component {
           <Box w={1 / 3} px={2}>
             <Panel>
               <HomePanelHeader>
-                <HomeIcon />
+                <HomeIcon color="red">
+                  <IconLaptop size={48} />
+                </HomeIcon>
                 Server Admin
               </HomePanelHeader>
               <HomePanelBody>
@@ -129,7 +146,9 @@ class SettingsIndex extends React.Component {
           <Box w={1 / 3} px={2}>
             <Panel>
               <HomePanelHeader>
-                <HomeIcon />
+                <HomeIcon>
+                  <IconLock size={48} />
+                </HomeIcon>
                 API Keys
               </HomePanelHeader>
               <HomePanelBody>
@@ -181,11 +200,15 @@ const HomePanelBody = styled(PanelBody)`
 `;
 
 const HomeIcon = styled.div`
-  background: ${p => p.theme.blue};
+  background: ${p => p.theme[p.color || 'gray2']};
+  color: #fff;
   width: 76px;
   height: 76px;
   border-radius: 76px;
   margin: 0 auto 20px;
+  > svg {
+    margin-top: 14px;
+  }
 `;
 
 const HomeLink = styled(Link)`
